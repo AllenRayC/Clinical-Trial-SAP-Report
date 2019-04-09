@@ -1,0 +1,95 @@
+1                                                          The SAS System                         10:33 Wednesday, November 23, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           1.01 seconds
+      cpu time            0.20 seconds
+      
+1          **-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    MSETUP.SAS
+3          ** CREATED:    NOVEMBER 2016
+4          ** PURPOSE:    SET STUDY-WIDE OPTIONS, LIBRARIES AND MACRO VARIABLES
+5          ** PROGRAMMER: A.CHANG
+6          ** PROTOCOL:   PROD-124
+7          **-------------------------------------------------------------------------------------
+7        ! ------**
+8          ** PROGRAMMED USING SAS VERSION 9.3
+8        !       **
+9          **-------------------------------------------------------------------------------------
+9        ! ------**;
+10         
+11         **-- DEFINE LIBRARIES --**;
+12         
+13         %let xdir = E:\PROD124\ ;
+14         %let opath=&xdir.Output ;	** TLF OUTPUT FOLDER **;
+15         
+16         libname rawlib "&xdir.Data\Original" access=readonly ;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+17         libname adslib "&xdir.Data\Analysis" ;
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+18         libname sdtmlib "&xdir.Data\SDTM" /* access=readonly */ ;
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+2                                         The SAS System        10:33 Wednesday, November 23, 2016
+
+19         libname pgmlib "&xdir.Programs" ;
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+20         
+21         **-- INCLUDE LIBRARY MACROS --**;
+22         %include "&xdir.Library\m*.sas" ;
+356        
+357        **-- ODS TEMPLATE --**;
+358        ods path pgmlib.templat (READ) sashelp.tmplmst (READ) ;		** CONNECT TO STANDARD ODS
+358      ! TEMPLATES **;
+359        
+360        options /* fmtsearch=(fmtlib)*/
+361                mprint
+362                msglevel=i
+363        		ls=125
+364        		missing=''
+365                noreplace
+366                nocenter
+367                validvarname = upcase ;
+368        
+369        /*
+370        validvarname - makes all created variables upcase.
+371        ls(linesize) - specifys the number of characters in a line.
+372        msglevel - specifies to print additional notes, such as warning when data is overwritten.
+373        nocenter - left aligns SAS procedure output.
+374        noreplace - specifies that a permanently stored SAS data set cannot be replaced with another
+375        			SAS data set of the same name
+376        */
+377        
+378        **-- DEFINE GENERIC VARIABLES --**;
+379        %let pat=usubjid ;
+380        %let trt=trt01pn ;
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           1.04 seconds
+      cpu time            0.21 seconds
+      

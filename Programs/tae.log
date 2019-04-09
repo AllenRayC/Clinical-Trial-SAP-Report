@@ -1,0 +1,1010 @@
+1                                                          The SAS System                            14:39 Monday, November 21, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           0.73 seconds
+      cpu time            0.17 seconds
+      
+1          **-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    TAE.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE TABLE 7.2.1 - ADVERSE EVENTS BY BODY SYSTEM
+7          **					  TABLE 7.2.2 - ADVERSE EVENTS BY BODY SYSTEM RELATED
+8          **
+9          ** PROGRAMMER: A.CHANG
+10         **
+11         ** INPUT:      ADAE, ADSL DATA
+12         **
+13         ** OUTPUT:     TABLE 7.2.1, TABLE 7.2.2
+14         **
+15         ** PROTOCOL:   PROD-124
+16         **
+17         ** MODIFIED:   DATE        BY          NOTE
+18         **             ----------  ----------
+18       ! -----------------------------------------------------
+19         **
+20         **-------------------------------------------------------------------------------------
+20       ! ------**;
+21         
+22         %include msetup ;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+2                                         The SAS System           14:39 Monday, November 21, 2016
+
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+403        %let printme = 1 ;
+404        
+405        /*
+406        MARGINS?!?!
+407        SAP AND TABLE MOCKUP DON'T MATCH
+408        
+409        Required margins: at least 1.5 inches on the binding margin and
+410        at least 1 inch on all other sides.  Required font: Times New Roman, 10pt.
+411        
+412        */
+413        
+414        **-------------------------------------------------------------------------------**;
+415        **  BRING IN ANALYSIS DATA                                                       **;
+416        **-------------------------------------------------------------------------------**;
+417        
+418        %macro tae (num=) ;
+419        	data adae ;
+420        		merge adslib.adae (in=inae where=(aestdtm > trtsdtm))
+421        			  adslib.adsl ;										** TAKE ONLY AE REPORTED AFTER PROD ADMINISTERED **;
+422        		by usubjid ;
+423        
+424        			 if &num = 1 then if inae ;
+425        		else if &num = 2 then if inae and aerel ne 'UNRELATED' ;
+426        
+427        	run ;
+428        
+429        	**----- EXPAND ADAE DATASET TO A NORMALIZED STRUCTURE (OUTPUT RECORDS FOR EACH CATEGORY) -----**;
+430        	data adae ;
+431        	   set adae ;
+432        	   length aetext $400 ;
+433        
+434        	   ** OUTPUT FOR PREFERRED TERM **;
+435        	   seq = 3 ;
+436        	   aetext = trim(left(propcase(aedecod))) ;
+437        	   output ;
+438        
+439        	   ** OUTPUT FOR BODY SYSTEM ROWS **;
+440        	   seq = 2 ;
+441        	   aetext = trim(left(propcase(aebodsys))) ;
+442        	   output ;
+443        
+444        	   ** OUTPUT FOR ANY AE ROW **;
+445        	   seq = 1 ;
+446        	   aebodsys = 'AAAA' ;
+447        	   aetext = 'Subjects with Adverse Event(s)^{super d}' ;
+448        	   output ;
+449        	run ;
+3 The SAS System                                                                              14:39 Monday, November 21, 2016
+
+450        
+451        	**----- OUTPUT FOR TOTALS COLUMN -----**;
+452        	data adae ;
+453        	   set adae ;
+454        	   output ;        ** OUTPUT ONCE FOR EACH SUBJECT **;
+455        	   trt01pn = 0 ;   ** RE-ASSIGN TOTAL, THEN OUTPUT AGAIN **;
+456        	   trt01p = 'All Subjects' ;
+457        	   output ;
+458        	run ;
+459        
+460        	**----- POPULATION COUNTS -----**;
+461        	data popcnt ;
+462        	   set adslib.adsl (where=(saffl eq 'Y')) ;
+463        	   output ;        ** OUTPUT ONCE FOR EACH SUBJECT **;
+464        	   trt01pn = 0 ;   ** RE-ASSIGN TOTAL, THEN OUTPUT AGAIN **;
+465        	   trt01p = 'Total' ;
+466        	   output ;
+467        	run ;
+468        
+469        	proc sort data=popcnt out=popcnt nodupkey ;
+470        	   by trt01pn subjid ;
+471        	run ;
+472        
+473        	proc freq data=popcnt noprint ;
+474        	   tables trt01pn*trt01p /out=popcnt (drop=percent) ;
+475        	run ;
+476        
+477        	**----- ASSIGN POPULATION COUNT INTO MACRO VARIABLES -----**;
+478        	data _null_ ;
+479        	   set popcnt ;
+480        	   call symput('popcnt'||compress(put(trt01pn,8.)),compress(put(count,8.))) ;
+481        	   call symput('trt'||compress(put(trt01pn,8.)),trim(left(trt01p))) ;
+482        	run ;
+483        
+484        	proc print data=popcnt ;
+485        	   title "CHECK DENOMINATORS" ;
+486        	   where &printme ;
+487        	run ;
+488        
+489        	**-------------------------------------------------------------------------------**;
+490        	**  FREQUENCY COUNTS                                                             **;
+491        	**-------------------------------------------------------------------------------**;
+492        
+493        	**-- DEDUPE BY SUBJECT/EVENTS --**;
+494        	proc sort data=adae out=subjects nodupkey ;
+495        	   by usubjid trt01pn aebodsys seq aetext ;
+496        	run ;
+497        
+498        	proc freq data=subjects noprint ;
+499        	   tables trt01pn*aebodsys*seq*aetext /out=subjects (drop=percent) ;
+500        	run ;
+501        
+502        	proc print data=subjects ;
+4 The SAS System                                                                              14:39 Monday, November 21, 2016
+
+503        	   format aebodsys aetext $20. ;
+504        	   where &printme ;
+505        	run ;
+506        
+507        	data subjects ;
+508        	   merge subjects
+509        			 popcnt (rename=(count=popcnt)) ;
+510        	   by trt01pn ;
+511        	   length col $200 ;
+512        
+513        		if n(count,popcnt) eq 2 then
+514        			do ;
+515        				if seq = 1 then col = compress(put(count,8.)) ;
+516        				else col = compress(put(count,8.))||' ('||compress(put(count/popcnt*100,8.1))||')' ;
+517        			end	;
+518        
+519        	run ;
+520        
+521        	proc sort data=subjects out=subjects ;
+522        	   by aebodsys seq aetext ;
+523        	run ;
+524        
+525        	proc transpose data=subjects out=adae (drop=_name_) ;
+526        	   by aebodsys seq aetext ;
+527        	   id trt01pn ;
+528        	   var col ;
+529        	run ;
+530        
+531        	data adae ;
+532        		set adae (rename=(_0=col0 _1=col1 _2=col2 )) ;
+533        		if aebodsys = '' then delete ;
+534        	run ;
+535        
+536        	**-------------------------------------------------------------------------------**;
+537        	**  FORMAT DATA FOR REPORT                                                       **;
+538        	**-------------------------------------------------------------------------------**;
+539        
+540        	data adae ;
+541        	   set adae ;
+542        	   if col0 eq ' ' then col0 = '0' ;
+543        	   if col1 eq ' ' then col1 = '0' ;
+544        	   if col2 eq ' ' then col2 = '0' ;
+545        
+546        	   if seq eq 3 then aetext = "^R'\li360 '" || aetext ;
+547        
+548        	run ;
+549        
+550        	proc print data=adae ;
+551        	   title "CHECK COMBINED STATS" ;
+552        	   var aebodsys seq aetext col0 col1 col2 ;
+553        	   where &printme ;
+554        	run ;
+555        
+5 The SAS System                                                                              14:39 Monday, November 21, 2016
+
+556        	**-------------------------------------------------------------------------------**;
+557        	**  CREATE MACRO TITLE AND FOOTNOTE A                                            **;
+558        	**-------------------------------------------------------------------------------**;
+559        
+560        	data _null_ ;
+561        		if &num = 1 then
+562        			do ;
+563        				call symput('title','Adverse Events^{super a} by Body System') ;
+564        				call symput('footnote',
+565        							'^{super a} Includes all adverse events reported after start of PROD administration.') ;
+566        			end ;
+567        		else if &num = 2 then
+568        			do ;
+569        				call symput('title','Adverse Events by Body System Related^{super a}') ;
+570        				call symput('footnote',
+571        							'^{super a} Includes all adverse events reported after start of PROD administration that are considered
+571      ! definitely, probably, or possibly related to PROD.') ;
+572        			end ;
+573        	run ;
+574        
+575        	**-------------------------------------------------------------------------------**;
+576        	**  CREATE REPORT                                                                **;
+577        	**-------------------------------------------------------------------------------**;
+578        
+579        	**----- RTF SETUP -----**;
+580        	options nodate nonumber orientation=landscape missing=' ';
+581        	ods listing close ;
+582        	ods escapechar='^' ;
+583        	ods rtf style=TStyleRTF file="&opath.\T7-2-&num..rtf" ;
+584        
+585        	**----- TITLES/FOOTNOTES -----**;
+586        	title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+587        	title2 j=left "Protocol PROD-124" j=right "&sysdate9"  ;
+588        	title3 j=center "Table 7.2.&num" ;
+589        
+590        	title5 j=center "&title" ;
+591        
+592        
+593        	title6 j=left "Study Population: Safety" ;
+594        
+595        	footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+596        	footnote2 h=10pt j=left "&footnote" ;
+597        	footnote3 h=10pt j=left "^{super b} Subjects who had more than one event within a body system were counted once."
+597      !  ;
+598        	footnote4 h=10pt j=left "^{super c} Subjects who had more than one event assigned to the same preferred term were
+598      !  counted once." ;
+599        	footnote5 h=10pt j=left "^{super d} Subjects who had more than one event were counted once." ;
+600        	footnote6 ;
+601        	footnote7 j=left "Data Source: ADAE, ADSL" j=right "Program: tae.sas" ;
+602        
+603        	**----- REPORT DEFINITION -----**;
+604        	proc report data=adae missing nowindows center split='|' style(report)=[outputwidth=9.0in] ;
+605        	   column aebodsys seq aetext col0-col2 ;
+6 The SAS System                                                                              14:39 Monday, November 21, 2016
+
+606        
+607        	   define aebodsys /order noprint ;
+608        	   define seq /order noprint ;
+609        
+610        	   define aetext /"^R'\ql\li360\fi-360 MedDRA Body System'^{super b}"
+611        					  "Preferred Term^{super c}" style(header)=[just=left] style(column)=[just=left cellwidth=3.00in] ;
+612        	   define col0 /"&trt0|(N=&popcnt0)|n (%)" style(column)=[just=center cellwidth=1.2in] ;
+613        	   define col1 /"&trt1|(N=&popcnt1)|n (%)" style(column)=[just=center cellwidth=1.2in] ;
+614        	   define col2 /"&trt2|(N=&popcnt2)|n (%)" style(column)=[just=center cellwidth=1.2in] ;
+615        
+616        	   compute before aebodsys ;
+617        	      line ' ' ;
+618        	   endcomp ;
+619        
+620        
+621        	run ;
+622        
+623        	**----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+624        	ods rtf close ;
+625        	ods listing ;
+626        
+627        	options date number ;
+628        	title ;
+629        	footnote ;
+630        
+631        %mend tae ;
+632        
+633        %tae(num=1)
+MPRINT(TAE):   data adae ;
+MPRINT(TAE):   merge adslib.adae (in=inae where=(aestdtm > trtsdtm)) adslib.adsl ;
+MPRINT(TAE):   ** TAKE ONLY AE REPORTED AFTER PROD ADMINISTERED **;
+MPRINT(TAE):   by usubjid ;
+MPRINT(TAE):   if 1 = 1 then if inae ;
+MPRINT(TAE):   else if 1 = 2 then if inae and aerel ne 'UNRELATED' ;
+MPRINT(TAE):   run ;
+
+INFO: The variable STUDYID on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+INFO: The variable SUBJID on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+INFO: The variable SITEID on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+INFO: The variable TRTSDTM on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+NOTE: There were 7 observations read from the data set ADSLIB.ADAE.
+      WHERE aestdtm>trtsdtm;
+NOTE: There were 34 observations read from the data set ADSLIB.ADSL.
+NOTE: The data set WORK.ADAE has 7 observations and 45 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TAE):   **----- EXPAND ADAE DATASET TO A NORMALIZED STRUCTURE (OUTPUT RECORDS FOR EACH CATEGORY) -----**;
+MPRINT(TAE):   data adae ;
+MPRINT(TAE):   set adae ;
+MPRINT(TAE):   length aetext $400 ;
+7 The SAS System                                                                              14:39 Monday, November 21, 2016
+
+MPRINT(TAE):   ** OUTPUT FOR PREFERRED TERM **;
+MPRINT(TAE):   seq = 3 ;
+MPRINT(TAE):   aetext = trim(left(propcase(aedecod))) ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   ** OUTPUT FOR BODY SYSTEM ROWS **;
+MPRINT(TAE):   seq = 2 ;
+MPRINT(TAE):   aetext = trim(left(propcase(aebodsys))) ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   ** OUTPUT FOR ANY AE ROW **;
+MPRINT(TAE):   seq = 1 ;
+MPRINT(TAE):   aebodsys = 'AAAA' ;
+MPRINT(TAE):   aetext = 'Subjects with Adverse Event(s)^{super d}' ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 7 observations read from the data set WORK.ADAE.
+NOTE: The data set WORK.ADAE has 21 observations and 47 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **----- OUTPUT FOR TOTALS COLUMN -----**;
+MPRINT(TAE):   data adae ;
+MPRINT(TAE):   set adae ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   ** OUTPUT ONCE FOR EACH SUBJECT **;
+MPRINT(TAE):   trt01pn = 0 ;
+MPRINT(TAE):   ** RE-ASSIGN TOTAL, THEN OUTPUT AGAIN **;
+MPRINT(TAE):   trt01p = 'All Subjects' ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 21 observations read from the data set WORK.ADAE.
+NOTE: The data set WORK.ADAE has 42 observations and 47 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **----- POPULATION COUNTS -----**;
+MPRINT(TAE):   data popcnt ;
+MPRINT(TAE):   set adslib.adsl (where=(saffl eq 'Y')) ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   ** OUTPUT ONCE FOR EACH SUBJECT **;
+MPRINT(TAE):   trt01pn = 0 ;
+MPRINT(TAE):   ** RE-ASSIGN TOTAL, THEN OUTPUT AGAIN **;
+MPRINT(TAE):   trt01p = 'Total' ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 31 observations read from the data set ADSLIB.ADSL.
+      WHERE saffl='Y';
+8 The SAS System                                                                              14:39 Monday, November 21, 2016
+
+NOTE: The data set WORK.POPCNT has 62 observations and 26 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc sort data=popcnt out=popcnt nodupkey ;
+MPRINT(TAE):   by trt01pn subjid ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 62 observations read from the data set WORK.POPCNT.
+NOTE: SAS sort was used.
+NOTE: 0 observations with duplicate key values were deleted.
+NOTE: The data set WORK.POPCNT has 62 observations and 26 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc freq data=popcnt noprint ;
+MPRINT(TAE):   tables trt01pn*trt01p /out=popcnt (drop=percent) ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 62 observations read from the data set WORK.POPCNT.
+NOTE: The data set WORK.POPCNT has 3 observations and 3 variables.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **----- ASSIGN POPULATION COUNT INTO MACRO VARIABLES -----**;
+MPRINT(TAE):   data _null_ ;
+MPRINT(TAE):   set popcnt ;
+MPRINT(TAE):   call symput('popcnt'||compress(put(trt01pn,8.)),compress(put(count,8.))) ;
+MPRINT(TAE):   call symput('trt'||compress(put(trt01pn,8.)),trim(left(trt01p))) ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 3 observations read from the data set WORK.POPCNT.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc print data=popcnt ;
+MPRINT(TAE):   title "CHECK DENOMINATORS" ;
+MPRINT(TAE):   where 1 ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 3 observations read from the data set WORK.POPCNT.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 1.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+9 The SAS System                                                                              14:39 Monday, November 21, 2016
+
+      cpu time            0.01 seconds
+      
+
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   ** FREQUENCY COUNTS **;
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   **-- DEDUPE BY SUBJECT/EVENTS --**;
+MPRINT(TAE):   proc sort data=adae out=subjects nodupkey ;
+MPRINT(TAE):   by usubjid trt01pn aebodsys seq aetext ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 42 observations read from the data set WORK.ADAE.
+NOTE: SAS sort was used.
+NOTE: 4 observations with duplicate key values were deleted.
+NOTE: The data set WORK.SUBJECTS has 38 observations and 47 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc freq data=subjects noprint ;
+MPRINT(TAE):   tables trt01pn*aebodsys*seq*aetext /out=subjects (drop=percent) ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 38 observations read from the data set WORK.SUBJECTS.
+NOTE: The data set WORK.SUBJECTS has 26 observations and 5 variables.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc print data=subjects ;
+MPRINT(TAE):   format aebodsys aetext $20. ;
+MPRINT(TAE):   where 1 ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 26 observations read from the data set WORK.SUBJECTS.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 2.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   data subjects ;
+MPRINT(TAE):   merge subjects popcnt (rename=(count=popcnt)) ;
+MPRINT(TAE):   by trt01pn ;
+MPRINT(TAE):   length col $200 ;
+MPRINT(TAE):   if n(count,popcnt) eq 2 then do ;
+MPRINT(TAE):   if seq = 1 then col = compress(put(count,8.)) ;
+MPRINT(TAE):   else col = compress(put(count,8.))||' ('||compress(put(count/popcnt*100,8.1))||')' ;
+MPRINT(TAE):   end ;
+MPRINT(TAE):   run ;
+10 The SAS System                                                                             14:39 Monday, November 21, 2016
+
+
+NOTE: There were 26 observations read from the data set WORK.SUBJECTS.
+NOTE: There were 3 observations read from the data set WORK.POPCNT.
+NOTE: The data set WORK.SUBJECTS has 26 observations and 8 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc sort data=subjects out=subjects ;
+MPRINT(TAE):   by aebodsys seq aetext ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 26 observations read from the data set WORK.SUBJECTS.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.SUBJECTS has 26 observations and 8 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc transpose data=subjects out=adae (drop=_name_) ;
+MPRINT(TAE):   by aebodsys seq aetext ;
+MPRINT(TAE):   id trt01pn ;
+MPRINT(TAE):   var col ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 26 observations read from the data set WORK.SUBJECTS.
+NOTE: The data set WORK.ADAE has 12 observations and 6 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   data adae ;
+MPRINT(TAE):   set adae (rename=(_0=col0 _1=col1 _2=col2 )) ;
+MPRINT(TAE):   if aebodsys = '' then delete ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 12 observations read from the data set WORK.ADAE.
+NOTE: The data set WORK.ADAE has 12 observations and 6 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   ** FORMAT DATA FOR REPORT **;
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   data adae ;
+MPRINT(TAE):   set adae ;
+MPRINT(TAE):   if col0 eq ' ' then col0 = '0' ;
+MPRINT(TAE):   if col1 eq ' ' then col1 = '0' ;
+11 The SAS System                                                                             14:39 Monday, November 21, 2016
+
+MPRINT(TAE):   if col2 eq ' ' then col2 = '0' ;
+MPRINT(TAE):   if seq eq 3 then aetext = "^R'\li360 '" || aetext ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 12 observations read from the data set WORK.ADAE.
+NOTE: The data set WORK.ADAE has 12 observations and 6 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc print data=adae ;
+MPRINT(TAE):   title "CHECK COMBINED STATS" ;
+MPRINT(TAE):   var aebodsys seq aetext col0 col1 col2 ;
+MPRINT(TAE):   where 1 ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 12 observations read from the data set WORK.ADAE.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 3.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   ** CREATE MACRO TITLE AND FOOTNOTE A **;
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   data _null_ ;
+MPRINT(TAE):   if 1 = 1 then do ;
+MPRINT(TAE):   call symput('title','Adverse Events^{super a} by Body System') ;
+MPRINT(TAE):   call symput('footnote', '^{super a} Includes all adverse events reported after start of PROD 
+administration.') ;
+MPRINT(TAE):   end ;
+MPRINT(TAE):   else if 1 = 2 then do ;
+MPRINT(TAE):   call symput('title','Adverse Events by Body System Related^{super a}') ;
+MPRINT(TAE):   call symput('footnote', '^{super a} Includes all adverse events reported after start of PROD administration 
+that are considered definitely, probably, or possibly related to PROD.') ;
+MPRINT(TAE):   end ;
+MPRINT(TAE):   run ;
+
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   ** CREATE REPORT **;
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   **----- RTF SETUP -----**;
+MPRINT(TAE):   options nodate nonumber orientation=landscape missing=' ';
+The SAS System
+
+MPRINT(TAE):   ods listing close ;
+MPRINT(TAE):   ods escapechar='^' ;
+MPRINT(TAE):   ods rtf style=TStyleRTF file="E:\PROD124\Output\T7-2-1.rtf" ;
+NOTE: Writing RTF Body file: E:\PROD124\Output\T7-2-1.rtf
+MPRINT(TAE):   **----- TITLES/FOOTNOTES -----**;
+MPRINT(TAE):   title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+MPRINT(TAE):   title2 j=left "Protocol PROD-124" j=right "21NOV2016" ;
+MPRINT(TAE):   title3 j=center "Table 7.2.1" ;
+MPRINT(TAE):   title5 j=center "Adverse Events^{super a} by Body System" ;
+MPRINT(TAE):   title6 j=left "Study Population: Safety" ;
+MPRINT(TAE):   footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+MPRINT(TAE):   footnote2 h=10pt j=left "^{super a} Includes all adverse events reported after start of PROD administration." ;
+MPRINT(TAE):   footnote3 h=10pt j=left "^{super b} Subjects who had more than one event within a body system were counted 
+once." ;
+MPRINT(TAE):   footnote4 h=10pt j=left "^{super c} Subjects who had more than one event assigned to the same preferred term 
+were counted once." ;
+MPRINT(TAE):   footnote5 h=10pt j=left "^{super d} Subjects who had more than one event were counted once." ;
+MPRINT(TAE):   footnote6 ;
+MPRINT(TAE):   footnote7 j=left "Data Source: ADAE, ADSL" j=right "Program: tae.sas" ;
+MPRINT(TAE):   **----- REPORT DEFINITION -----**;
+MPRINT(TAE):   proc report data=adae missing nowindows center split='|' style(report)=[outputwidth=9.0in] ;
+MPRINT(TAE):   column aebodsys seq aetext col0-col2 ;
+MPRINT(TAE):   define aebodsys /order noprint ;
+MPRINT(TAE):   define seq /order noprint ;
+MPRINT(TAE):   define aetext /"^R'\ql\li360\fi-360 MedDRA Body System'^{super b}" "Preferred Term^{super c}" 
+style(header)=[just=left] style(column)=[just=left cellwidth=3.00in] ;
+MPRINT(TAE):   define col0 /"Total|(N=31)|n (%)" style(column)=[just=center cellwidth=1.2in] ;
+MPRINT(TAE):   define col1 /"Cohort 1|(N=15)|n (%)" style(column)=[just=center cellwidth=1.2in] ;
+MPRINT(TAE):   define col2 /"Cohort 2|(N=16)|n (%)" style(column)=[just=center cellwidth=1.2in] ;
+MPRINT(TAE):   compute before aebodsys ;
+MPRINT(TAE):   line ' ' ;
+MPRINT(TAE):   endcomp ;
+MPRINT(TAE):   run ;
+NOTE: Multiple concurrent threads will be used to summarize data.
+NOTE: There were 12 observations read from the data set WORK.ADAE.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+The SAS System
+
+MPRINT(TAE):   **----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+MPRINT(TAE):   ods rtf close ;
+MPRINT(TAE):   ods listing ;
+MPRINT(TAE):   options date number ;
+MPRINT(TAE):   title ;
+MPRINT(TAE):   footnote ;
+634        %tae(num=2)
+MPRINT(TAE):   data adae ;
+MPRINT(TAE):   merge adslib.adae (in=inae where=(aestdtm > trtsdtm)) adslib.adsl ;
+MPRINT(TAE):   ** TAKE ONLY AE REPORTED AFTER PROD ADMINISTERED **;
+MPRINT(TAE):   by usubjid ;
+MPRINT(TAE):   if 2 = 1 then if inae ;
+MPRINT(TAE):   else if 2 = 2 then if inae and aerel ne 'UNRELATED' ;
+MPRINT(TAE):   run ;
+
+INFO: The variable STUDYID on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+INFO: The variable SUBJID on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+INFO: The variable SITEID on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+INFO: The variable TRTSDTM on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+NOTE: There were 7 observations read from the data set ADSLIB.ADAE.
+      WHERE aestdtm>trtsdtm;
+NOTE: There were 34 observations read from the data set ADSLIB.ADSL.
+NOTE: The data set WORK.ADAE has 2 observations and 45 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **----- EXPAND ADAE DATASET TO A NORMALIZED STRUCTURE (OUTPUT RECORDS FOR EACH CATEGORY) -----**;
+MPRINT(TAE):   data adae ;
+MPRINT(TAE):   set adae ;
+MPRINT(TAE):   length aetext $400 ;
+MPRINT(TAE):   ** OUTPUT FOR PREFERRED TERM **;
+MPRINT(TAE):   seq = 3 ;
+MPRINT(TAE):   aetext = trim(left(propcase(aedecod))) ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   ** OUTPUT FOR BODY SYSTEM ROWS **;
+MPRINT(TAE):   seq = 2 ;
+MPRINT(TAE):   aetext = trim(left(propcase(aebodsys))) ;
+MPRINT(TAE):   output ;
+14 The SAS System                                                                                14:39 Monday, November 21, 2016
+
+MPRINT(TAE):   ** OUTPUT FOR ANY AE ROW **;
+MPRINT(TAE):   seq = 1 ;
+MPRINT(TAE):   aebodsys = 'AAAA' ;
+MPRINT(TAE):   aetext = 'Subjects with Adverse Event(s)^{super d}' ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 2 observations read from the data set WORK.ADAE.
+NOTE: The data set WORK.ADAE has 6 observations and 47 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **----- OUTPUT FOR TOTALS COLUMN -----**;
+MPRINT(TAE):   data adae ;
+MPRINT(TAE):   set adae ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   ** OUTPUT ONCE FOR EACH SUBJECT **;
+MPRINT(TAE):   trt01pn = 0 ;
+MPRINT(TAE):   ** RE-ASSIGN TOTAL, THEN OUTPUT AGAIN **;
+MPRINT(TAE):   trt01p = 'All Subjects' ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 6 observations read from the data set WORK.ADAE.
+NOTE: The data set WORK.ADAE has 12 observations and 47 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **----- POPULATION COUNTS -----**;
+MPRINT(TAE):   data popcnt ;
+MPRINT(TAE):   set adslib.adsl (where=(saffl eq 'Y')) ;
+MPRINT(TAE):   output ;
+MPRINT(TAE):   ** OUTPUT ONCE FOR EACH SUBJECT **;
+MPRINT(TAE):   trt01pn = 0 ;
+MPRINT(TAE):   ** RE-ASSIGN TOTAL, THEN OUTPUT AGAIN **;
+MPRINT(TAE):   trt01p = 'Total' ;
+15 The SAS System                                                                                14:39 Monday, November 21, 2016
+
+MPRINT(TAE):   output ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 31 observations read from the data set ADSLIB.ADSL.
+      WHERE saffl='Y';
+NOTE: The data set WORK.POPCNT has 62 observations and 26 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc sort data=popcnt out=popcnt nodupkey ;
+MPRINT(TAE):   by trt01pn subjid ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 62 observations read from the data set WORK.POPCNT.
+NOTE: SAS sort was used.
+NOTE: 0 observations with duplicate key values were deleted.
+NOTE: The data set WORK.POPCNT has 62 observations and 26 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TAE):   proc freq data=popcnt noprint ;
+MPRINT(TAE):   tables trt01pn*trt01p /out=popcnt (drop=percent) ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 62 observations read from the data set WORK.POPCNT.
+NOTE: The data set WORK.POPCNT has 3 observations and 3 variables.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TAE):   **----- ASSIGN POPULATION COUNT INTO MACRO VARIABLES -----**;
+MPRINT(TAE):   data _null_ ;
+MPRINT(TAE):   set popcnt ;
+MPRINT(TAE):   call symput('popcnt'||compress(put(trt01pn,8.)),compress(put(count,8.))) ;
+MPRINT(TAE):   call symput('trt'||compress(put(trt01pn,8.)),trim(left(trt01p))) ;
+16 The SAS System                                                                                14:39 Monday, November 21, 2016
+
+MPRINT(TAE):   run ;
+
+NOTE: There were 3 observations read from the data set WORK.POPCNT.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc print data=popcnt ;
+MPRINT(TAE):   title "CHECK DENOMINATORS" ;
+MPRINT(TAE):   where 1 ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 3 observations read from the data set WORK.POPCNT.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 4.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   ** FREQUENCY COUNTS **;
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   **-- DEDUPE BY SUBJECT/EVENTS --**;
+MPRINT(TAE):   proc sort data=adae out=subjects nodupkey ;
+MPRINT(TAE):   by usubjid trt01pn aebodsys seq aetext ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 12 observations read from the data set WORK.ADAE.
+NOTE: SAS sort was used.
+NOTE: 2 observations with duplicate key values were deleted.
+NOTE: The data set WORK.SUBJECTS has 10 observations and 47 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc freq data=subjects noprint ;
+MPRINT(TAE):   tables trt01pn*aebodsys*seq*aetext /out=subjects (drop=percent) ;
+17 The SAS System                                                                                14:39 Monday, November 21, 2016
+
+MPRINT(TAE):   run ;
+
+NOTE: There were 10 observations read from the data set WORK.SUBJECTS.
+NOTE: The data set WORK.SUBJECTS has 10 observations and 5 variables.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+MPRINT(TAE):   proc print data=subjects ;
+MPRINT(TAE):   format aebodsys aetext $20. ;
+MPRINT(TAE):   where 1 ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 10 observations read from the data set WORK.SUBJECTS.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 5.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   data subjects ;
+MPRINT(TAE):   merge subjects popcnt (rename=(count=popcnt)) ;
+MPRINT(TAE):   by trt01pn ;
+MPRINT(TAE):   length col $200 ;
+MPRINT(TAE):   if n(count,popcnt) eq 2 then do ;
+MPRINT(TAE):   if seq = 1 then col = compress(put(count,8.)) ;
+MPRINT(TAE):   else col = compress(put(count,8.))||' ('||compress(put(count/popcnt*100,8.1))||')' ;
+MPRINT(TAE):   end ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 10 observations read from the data set WORK.SUBJECTS.
+NOTE: There were 3 observations read from the data set WORK.POPCNT.
+NOTE: The data set WORK.SUBJECTS has 11 observations and 8 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+18 The SAS System                                                                                14:39 Monday, November 21, 2016
+
+MPRINT(TAE):   proc sort data=subjects out=subjects ;
+MPRINT(TAE):   by aebodsys seq aetext ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 11 observations read from the data set WORK.SUBJECTS.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.SUBJECTS has 11 observations and 8 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc transpose data=subjects out=adae (drop=_name_) ;
+MPRINT(TAE):   by aebodsys seq aetext ;
+MPRINT(TAE):   id trt01pn ;
+MPRINT(TAE):   var col ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 11 observations read from the data set WORK.SUBJECTS.
+NOTE: The data set WORK.ADAE has 6 observations and 6 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   data adae ;
+MPRINT(TAE):   set adae (rename=(_0=col0 _1=col1 _2=col2 )) ;
+MPRINT(TAE):   if aebodsys = '' then delete ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 6 observations read from the data set WORK.ADAE.
+NOTE: The data set WORK.ADAE has 5 observations and 6 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   ** FORMAT DATA FOR REPORT **;
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+19 The SAS System                                                                                14:39 Monday, November 21, 2016
+
+MPRINT(TAE):   data adae ;
+MPRINT(TAE):   set adae ;
+MPRINT(TAE):   if col0 eq ' ' then col0 = '0' ;
+MPRINT(TAE):   if col1 eq ' ' then col1 = '0' ;
+MPRINT(TAE):   if col2 eq ' ' then col2 = '0' ;
+MPRINT(TAE):   if seq eq 3 then aetext = "^R'\li360 '" || aetext ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 5 observations read from the data set WORK.ADAE.
+NOTE: The data set WORK.ADAE has 5 observations and 6 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   proc print data=adae ;
+MPRINT(TAE):   title "CHECK COMBINED STATS" ;
+MPRINT(TAE):   var aebodsys seq aetext col0 col1 col2 ;
+MPRINT(TAE):   where 1 ;
+MPRINT(TAE):   run ;
+
+NOTE: There were 5 observations read from the data set WORK.ADAE.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 6.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   ** CREATE MACRO TITLE AND FOOTNOTE A **;
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   data _null_ ;
+MPRINT(TAE):   if 2 = 1 then do ;
+MPRINT(TAE):   call symput('title','Adverse Events^{super a} by Body System') ;
+MPRINT(TAE):   call symput('footnote', '^{super a} Includes all adverse events reported after start of PROD administration.') ;
+MPRINT(TAE):   end ;
+MPRINT(TAE):   else if 2 = 2 then do ;
+MPRINT(TAE):   call symput('title','Adverse Events by Body System Related^{super a}') ;
+MPRINT(TAE):   call symput('footnote', '^{super a} Includes all adverse events reported after start of PROD administration that 
+20 The SAS System                                                                                14:39 Monday, November 21, 2016
+
+are considered definitely, probably, or possibly related to PROD.') ;
+MPRINT(TAE):   end ;
+MPRINT(TAE):   run ;
+
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   ** CREATE REPORT **;
+MPRINT(TAE):   **-------------------------------------------------------------------------------**;
+MPRINT(TAE):   **----- RTF SETUP -----**;
+MPRINT(TAE):   options nodate nonumber orientation=landscape missing=' ';
+MPRINT(TAE):   ods listing close ;
+MPRINT(TAE):   ods escapechar='^' ;
+MPRINT(TAE):   ods rtf style=TStyleRTF file="E:\PROD124\Output\T7-2-2.rtf" ;
+NOTE: Writing RTF Body file: E:\PROD124\Output\T7-2-2.rtf
+MPRINT(TAE):   **----- TITLES/FOOTNOTES -----**;
+MPRINT(TAE):   title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+MPRINT(TAE):   title2 j=left "Protocol PROD-124" j=right "21NOV2016" ;
+MPRINT(TAE):   title3 j=center "Table 7.2.2" ;
+MPRINT(TAE):   title5 j=center "Adverse Events by Body System Related^{super a}" ;
+MPRINT(TAE):   title6 j=left "Study Population: Safety" ;
+MPRINT(TAE):   footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+MPRINT(TAE):   footnote2 h=10pt j=left "^{super a} Includes all adverse events reported after start of PROD administration that 
+are considered definitely, probably, or possibly related to PROD." ;
+MPRINT(TAE):   footnote3 h=10pt j=left "^{super b} Subjects who had more than one event within a body system were counted 
+once." ;
+MPRINT(TAE):   footnote4 h=10pt j=left "^{super c} Subjects who had more than one event assigned to the same preferred term 
+were counted once." ;
+MPRINT(TAE):   footnote5 h=10pt j=left "^{super d} Subjects who had more than one event were counted once." ;
+MPRINT(TAE):   footnote6 ;
+MPRINT(TAE):   footnote7 j=left "Data Source: ADAE, ADSL" j=right "Program: tae.sas" ;
+MPRINT(TAE):   **----- REPORT DEFINITION -----**;
+MPRINT(TAE):   proc report data=adae missing nowindows center split='|' style(report)=[outputwidth=9.0in] ;
+MPRINT(TAE):   column aebodsys seq aetext col0-col2 ;
+MPRINT(TAE):   define aebodsys /order noprint ;
+MPRINT(TAE):   define seq /order noprint ;
+MPRINT(TAE):   define aetext /"^R'\ql\li360\fi-360 MedDRA Body System'^{super b}" "Preferred Term^{super c}" 
+The SAS System
+
+style(header)=[just=left] style(column)=[just=left cellwidth=3.00in] ;
+MPRINT(TAE):   define col0 /"Total|(N=31)|n (%)" style(column)=[just=center cellwidth=1.2in] ;
+MPRINT(TAE):   define col1 /"Cohort 1|(N=15)|n (%)" style(column)=[just=center cellwidth=1.2in] ;
+MPRINT(TAE):   define col2 /"Cohort 2|(N=16)|n (%)" style(column)=[just=center cellwidth=1.2in] ;
+MPRINT(TAE):   compute before aebodsys ;
+MPRINT(TAE):   line ' ' ;
+MPRINT(TAE):   endcomp ;
+MPRINT(TAE):   run ;
+NOTE: Multiple concurrent threads will be used to summarize data.
+NOTE: There were 5 observations read from the data set WORK.ADAE.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TAE):   **----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+MPRINT(TAE):   ods rtf close ;
+MPRINT(TAE):   ods listing ;
+MPRINT(TAE):   options date number ;
+MPRINT(TAE):   title ;
+MPRINT(TAE):   footnote ;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           2.50 seconds
+      cpu time            0.71 seconds
+      

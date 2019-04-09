@@ -1,0 +1,183 @@
+CHECK EX DATA                                                                             15:04 Monday, November 21, 2016   1
+
+Obs        USUBJID         PRODDOSE
+
+  1    PROD-124-044-101      46.0  
+  2    PROD-124-044-102      23.0  
+  3    PROD-124-044-104      20.7  
+  4    PROD-124-044-105      85.1  
+  5    PROD-124-044-106      75.9  
+  6    PROD-124-044-107      69.0  
+  7    PROD-124-044-109      71.3  
+  8    PROD-124-044-110      62.1  
+  9    PROD-124-044-111      69.0  
+ 10    PROD-124-044-113      29.9  
+ 11    PROD-124-044-114      29.9  
+ 12    PROD-124-044-115      69.0  
+ 13    PROD-124-044-116      52.9  
+ 14    PROD-124-044-117      39.1  
+ 15    PROD-124-044-118      75.9  
+ 16    PROD-124-044-119      92.0  
+ 17    PROD-124-044-120      29.9  
+ 18    PROD-124-044-121      29.9  
+ 19    PROD-124-044-122      41.4  
+ 20    PROD-124-044-123      52.9  
+ 21    PROD-124-044-124      23.0  
+ 22    PROD-124-044-125      78.2  
+ 23    PROD-124-044-126      62.1  
+ 24    PROD-124-044-127      39.1  
+ 25    PROD-124-044-128      27.6  
+ 26    PROD-124-044-129      39.1  
+ 27    PROD-124-044-130      69.0  
+ 28    PROD-124-044-131      92.0  
+ 29    PROD-124-044-132      41.4  
+ 30    PROD-124-044-133      52.9  
+ 31    PROD-124-044-134      69.0  
+CHECK FASFL                                                                               15:04 Monday, November 21, 2016   2
+
+Obs        USUBJID         FASFL
+
+  1    PROD-124-044-101      Y  
+  2    PROD-124-044-102      Y  
+  3    PROD-124-044-103      N  
+  4    PROD-124-044-104      Y  
+  5    PROD-124-044-105      Y  
+  6    PROD-124-044-106      Y  
+  7    PROD-124-044-107      Y  
+  8    PROD-124-044-108      N  
+  9    PROD-124-044-109      Y  
+ 10    PROD-124-044-110      Y  
+ 11    PROD-124-044-111      Y  
+ 12    PROD-124-044-112      N  
+ 13    PROD-124-044-113      Y  
+ 14    PROD-124-044-114      Y  
+ 15    PROD-124-044-115      Y  
+ 16    PROD-124-044-116      Y  
+ 17    PROD-124-044-117      Y  
+ 18    PROD-124-044-118      Y  
+ 19    PROD-124-044-119      Y  
+ 20    PROD-124-044-120      Y  
+ 21    PROD-124-044-121      Y  
+ 22    PROD-124-044-122      Y  
+ 23    PROD-124-044-123      Y  
+ 24    PROD-124-044-124      Y  
+ 25    PROD-124-044-125      Y  
+ 26    PROD-124-044-126      Y  
+ 27    PROD-124-044-127      Y  
+ 28    PROD-124-044-128      Y  
+ 29    PROD-124-044-129      Y  
+ 30    PROD-124-044-130      Y  
+ 31    PROD-124-044-131      Y  
+ 32    PROD-124-044-132      Y  
+ 33    PROD-124-044-133      Y  
+ 34    PROD-124-044-134      Y  
+CHECK ANALYSIS DATA                                                                       15:04 Monday, November 21, 2016   3
+
+ 
+      S            U                  C          R                                  T            B
+      T            S            S     O   S      F          T         T             R            R
+      U            U            U     U   I      S          R         R             T            T
+      D            B            B     N   T      T          T         T             S            H                A
+ O    Y            J            J     T   E      D          S         E             D            D         A      G   S
+ b    I            I            I     R   I      T          D         D             T            T         G      E   E
+ s    D            D            D     Y   D      C          T         T             M            C         E      U   X
+
+ 1 PROD-124 PROD-124-044-101 044-101 USA 044 10/09/2006 09OCT2006 09OCT2006 09OCT06:09:16:00 07/29/1962 44.1641 YEARS F
+ 2 PROD-124 PROD-124-044-102 044-102 USA 044 10/23/2006 23OCT2006 23OCT2006 23OCT06:10:50:00 05/15/1973 33.4141 YEARS F
+ 3 PROD-124 PROD-124-044-103 044-103 USA 044 07/17/2006                                      10/09/1979 26.7500 YEARS F
+ 4 PROD-124 PROD-124-044-104 044-104 USA 044 11/05/2006 05NOV2006 05NOV2006 05NOV06:09:20:00 04/20/1973 33.5000 YEARS F
+ 5 PROD-124 PROD-124-044-105 044-105 USA 044 11/05/2006 05NOV2006 05NOV2006 05NOV06:11:09:00 08/05/1962 44.2500 YEARS M
+ 6 PROD-124 PROD-124-044-106 044-106 USA 044 10/23/2006 23OCT2006 23OCT2006 23OCT06:08:52:00 08/14/1975 31.1641 YEARS M
+ 7 PROD-124 PROD-124-044-107 044-107 USA 044 10/13/2006 13OCT2006 13OCT2006 13OCT06:14:30:00 02/23/1974 32.5781 YEARS F
+ 8 PROD-124 PROD-124-044-108 044-108 USA 044 07/16/2006                                      09/11/1980 25.8320 YEARS M
+ 9 PROD-124 PROD-124-044-109 044-109 USA 044 09/11/2006 11SEP2006 11SEP2006 11SEP06:14:21:00 06/03/1979 27.2500 YEARS M
+10 PROD-124 PROD-124-044-110 044-110 USA 044 09/18/2006 18SEP2006 18SEP2006 18SEP06:13:43:00 03/15/1981 25.5000 YEARS M
+11 PROD-124 PROD-124-044-111 044-111 USA 044 11/12/2006 12NOV2006 12NOV2006 12NOV06:12:17:00 07/11/1964 42.3281 YEARS M
+12 PROD-124 PROD-124-044-112 044-112 USA 044 07/17/2006                                      07/11/1974 32.0000 YEARS F
+13 PROD-124 PROD-124-044-113 044-113 USA 044 09/17/2006 17SEP2006 17SEP2006 17SEP06:15:46:00 04/08/1967 39.4141 YEARS M
+14 PROD-124 PROD-124-044-114 044-114 USA 044 09/25/2006 25SEP2006 25SEP2006 25SEP06:13:29:00 12/24/1976 29.7500 YEARS F
+15 PROD-124 PROD-124-044-115 044-115 USA 044 10/06/2006 06OCT2006 06OCT2006 06OCT06:13:54:00 06/30/1981 25.2500 YEARS M
+16 PROD-124 PROD-124-044-116 044-116 USA 044 10/08/2006 08OCT2006 08OCT2006 08OCT06:11:09:00 01/03/1968 38.7500 YEARS M
+17 PROD-124 PROD-124-044-117 044-117 USA 044 09/15/2006 15SEP2006 15SEP2006 15SEP06:15:46:00 11/09/1975 30.8320 YEARS M
+
+                                             R
+          S                            R     A                                                     T
+     S    E                            A     C                                               T     R    W      H
+     E    X                            C     E                                          A    R     T    E      E  S F
+     X    G           R                E     G                                          R    T     0    I      I  A A
+ O   G    R           A                G     R                    A                     M    0     1    G      G  F S
+ b   R    1           C                R     1                    R                     C    1     P    H      H  F F
+ s   1    N           E                1     N                    M                     D    P     N    T      T  L L
+
+ 1 Female 2 BLACK                  Black     2 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1 103.600 62.0 Y Y
+ 2 Female 2 CAUCASIAN              Caucasian 1 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  64.500 66.0 Y Y
+ 3 Female 2 CAUCASIAN              Caucasian 1                                                                    N N
+ 4 Female 2 BLACK                  Black     2 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  50.000 61.0 Y Y
+ 5 Male   1 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2 101.800 76.0 Y Y
+ 6 Male   1 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  90.000 72.0 Y Y
+ 7 Female 2 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  76.400 62.0 Y Y
+ 8 Male   1 CAUCASIAN              Caucasian 1                                                                    N N
+ 9 Male   1 BLACK                  Black     2 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  74.500 71.0 Y Y
+10 Male   1 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  73.200 73.0 Y Y
+11 Male   1 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  81.800 69.0 Y Y
+12 Female 2 BLACK                  Black     2                                                                    N N
+13 Male   1 CAUCASIAN              Caucasian 1 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  80.000 72.0 Y Y
+14 Female 2 CAUCASIAN              Caucasian 1 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  82.300 68.0 Y Y
+15 Male   1 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  79.500 73.0 Y Y
+16 Male   1 CAUCASIAN              Caucasian 1 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1 122.700 72.0 Y Y
+17 Male   1 CAUCASIAN              Caucasian 1 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  89.100 69.0 Y Y
+CHECK ANALYSIS DATA                                                                       15:04 Monday, November 21, 2016   4
+
+ 
+      S            U                  C          R                                  T            B
+      T            S            S     O   S      F          T         T             R            R
+      U            U            U     U   I      S          R         R             T            T
+      D            B            B     N   T      T          T         T             S            H                A
+ O    Y            J            J     T   E      D          S         E             D            D         A      G   S
+ b    I            I            I     R   I      T          D         D             T            T         G      E   E
+ s    D            D            D     Y   D      C          T         T             M            C         E      U   X
+
+18 PROD-124 PROD-124-044-118 044-118 USA 044 09/10/2006 10SEP2006 10SEP2006 10SEP06:13:45:00 01/30/1973 33.5781 YEARS M
+19 PROD-124 PROD-124-044-119 044-119 USA 044 09/15/2006 15SEP2006 15SEP2006 15SEP06:13:50:00 08/08/1974 32.0781 YEARS F
+20 PROD-124 PROD-124-044-120 044-120 USA 044 10/08/2006 08OCT2006 08OCT2006 08OCT06:13:27:00 01/11/1978 28.6641 YEARS M
+21 PROD-124 PROD-124-044-121 044-121 USA 044 09/22/2006 22SEP2006 22SEP2006 22SEP06:15:29:00 10/16/1970 35.9141 YEARS F
+22 PROD-124 PROD-124-044-122 044-122 USA 044 09/11/2006 11SEP2006 11SEP2006 11SEP06:15:59:00 01/07/1976 30.6641 YEARS M
+23 PROD-124 PROD-124-044-123 044-123 USA 044 09/25/2006 25SEP2006 25SEP2006 25SEP06:15:22:00 07/20/1977 29.1641 YEARS M
+24 PROD-124 PROD-124-044-124 044-124 USA 044 09/18/2006 18SEP2006 18SEP2006 18SEP06:16:25:00 03/31/1981 25.4141 YEARS F
+25 PROD-124 PROD-124-044-125 044-125 USA 044 09/08/2006 08SEP2006 08SEP2006 08SEP06:13:33:00 04/16/1962 44.3281 YEARS F
+26 PROD-124 PROD-124-044-126 044-126 USA 044 10/08/2006 08OCT2006 08OCT2006 08OCT06:09:34:00 01/27/1960 46.6641 YEARS F
+27 PROD-124 PROD-124-044-127 044-127 USA 044 10/06/2006 06OCT2006 06OCT2006 06OCT06:15:30:00 08/22/1979 27.0820 YEARS F
+28 PROD-124 PROD-124-044-128 044-128 USA 044 11/03/2006 03NOV2006 03NOV2006 03NOV06:14:04:00 04/05/1966 40.5000 YEARS F
+29 PROD-124 PROD-124-044-129 044-129 USA 044 09/22/2006 22SEP2006 22SEP2006 22SEP06:13:33:00 05/13/1968 38.3281 YEARS M
+30 PROD-124 PROD-124-044-130 044-130 USA 044 10/09/2006 09OCT2006 09OCT2006 09OCT06:10:48:00 02/13/1977 29.5820 YEARS M
+31 PROD-124 PROD-124-044-131 044-131 USA 044 10/20/2006 20OCT2006 20OCT2006 20OCT06:09:35:00 01/22/1982 24.6641 YEARS F
+32 PROD-124 PROD-124-044-132 044-132 USA 044 09/10/2006 10SEP2006 10SEP2006 10SEP06:15:32:00 06/19/1977 29.1641 YEARS M
+33 PROD-124 PROD-124-044-133 044-133 USA 044 10/16/2006 16OCT2006 16OCT2006 16OCT06:08:54:00 01/28/1983 23.6641 YEARS M
+34 PROD-124 PROD-124-044-134 044-134 USA 044 09/17/2006 17SEP2006 17SEP2006 17SEP06:14:00:00 09/20/1984 21.9141 YEARS M
+
+                                             R
+          S                            R     A                                                     T
+     S    E                            A     C                                               T     R    W      H
+     E    X                            C     E                                          A    R     T    E      E  S F
+     X    G           R                E     G                                          R    T     0    I      I  A A
+ O   G    R           A                G     R                    A                     M    0     1    G      G  F S
+ b   R    1           C                R     1                    R                     C    1     P    H      H  F F
+ s   1    N           E                1     N                    M                     D    P     N    T      T  L L
+
+18 Male   1 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  84.100 72.0 Y Y
+19 Female 2 BLACK                  Black     2 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2 108.600 69.0 Y Y
+20 Male   1 CAUCASIAN              Caucasian 1 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  71.800 70.0 Y Y
+21 Female 2 CAUCASIAN              Caucasian 1 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  77.700 65.0 Y Y
+22 Male   1 OTHER, NATIVE AMERICAN Other     5 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  84.100 71.0 Y Y
+23 Male   1 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  64.100 71.0 Y Y
+24 Female 2 CAUCASIAN              Caucasian 1 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  64.100 63.5 Y Y
+25 Female 2 BLACK                  Black     2 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  68.100 63.0 Y Y
+26 Female 2 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  70.900 69.0 Y Y
+27 Female 2 CAUCASIAN              Caucasian 1 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  86.400 70.0 Y Y
+28 Female 2 CAUCASIAN              Caucasian 1 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  70.000 65.0 Y Y
+29 Male   1 BLACK                  Black     2 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  95.500 67.0 Y Y
+30 Male   1 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  84.100 73.0 Y Y
+31 Female 2 BLACK                  Black     2 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2 109.100 66.0 Y Y
+32 Male   1 CAUCASIAN              Caucasian 1 Bag in Infusion 1 / Bottle in Infusion 2 1 Cohort 1 1  90.000 72.0 Y Y
+33 Male   1 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  65.500 66.0 Y Y
+34 Male   1 CAUCASIAN              Caucasian 1 Bottle in Infusion 1 / Bag in Infusion 2 2 Cohort 2 2  82.300 74.0 Y Y

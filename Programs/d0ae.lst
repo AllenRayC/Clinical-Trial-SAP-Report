@@ -1,0 +1,52 @@
+CHECK ADVERSE EVENTS SDTM DATASET                                                         15:04 Monday, November 21, 2016   1
+
+Obs    STUDYID     DOMAIN        USUBJID         AESEQ    AETERM                      AEDECOD
+
+  1    PROD-124      AE      PROD-124-044-102      1      CHEST PRESSURE              CHEST PRESSURE SENSATION
+  2    PROD-124      AE      PROD-124-044-102      2      RIGHT ARM DISCOMFORT        LIMB DISCOMFORT NOS     
+  3    PROD-124      AE      PROD-124-044-107      1      ANXIETY                     ANXIETY NEC             
+  4    PROD-124      AE      PROD-124-044-109      1      LIGHTHEADEDNESS             DIZZINESS               
+  5    PROD-124      AE      PROD-124-044-110      3      TINGLING IN TOES            PARAESTHESIA            
+  6    PROD-124      AE      PROD-124-044-110      2      HEAVY FEELING IN STOMACH    ABDOMINAL DISTENSION    
+  7    PROD-124      AE      PROD-124-044-110      1      FACIAL FLUSHING             FLUSHING                
+  8    PROD-124      AE      PROD-124-044-115      1      STOMACH UPSET               NAUSEA                  
+  9    PROD-124      AE      PROD-124-044-116      2      HEADACHE                    HEADACHE NOS            
+ 10    PROD-124      AE      PROD-124-044-116      1      WORSENING HYPERTENSION      HYPERTENSION AGGRAVATED 
+ 11    PROD-124      AE      PROD-124-044-117      2      HEADACHE                    HEADACHE NOS            
+ 12    PROD-124      AE      PROD-124-044-117      1      FLUSHED                     FLUSHING                
+ 13    PROD-124      AE      PROD-124-044-121      1      HEADACHE                    HEADACHE NOS            
+ 14    PROD-124      AE      PROD-124-044-125      1      NAUSEA                      NAUSEA                  
+
+Obs    AEBODSYS                                                AESEVN    AESEV       AERELN      AEREL
+
+  1    GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS       1      MILD           2      POSSIBLY 
+  2    MUSCULOSKELETAL AND CONNECTIVE TISSUE DISORDERS            1      MILD           2      POSSIBLY 
+  3    PSYCHIATRIC DISORDERS                                      1      MILD           1      UNRELATED
+  4    NERVOUS SYSTEM DISORDERS                                   1      MILD           2      POSSIBLY 
+  5    NERVOUS SYSTEM DISORDERS                                   1      MILD           1      UNRELATED
+  6    GASTROINTESTINAL DISORDERS                                 1      MILD           2      POSSIBLY 
+  7    VASCULAR DISORDERS                                         1      MILD           2      POSSIBLY 
+  8    GASTROINTESTINAL DISORDERS                                 1      MILD           1      UNRELATED
+  9    NERVOUS SYSTEM DISORDERS                                   2      MODERATE       1      UNRELATED
+ 10    VASCULAR DISORDERS                                         1      MILD           1      UNRELATED
+ 11    NERVOUS SYSTEM DISORDERS                                   3      SEVERE         3      PROBABLY 
+ 12    VASCULAR DISORDERS                                         1      MILD           3      PROBABLY 
+ 13    NERVOUS SYSTEM DISORDERS                                   2      MODERATE       3      PROBABLY 
+ 14    GASTROINTESTINAL DISORDERS                                 1      MILD           1      UNRELATED
+
+Obs        AESTDTC             AEENDTC         AEACN    AEACNOTH     AESER
+
+  1    2006-10-23T15:34    2006-10-23T16:55             Treatment      N  
+  2    2006-10-23T15:47    2006-10-23T16:50             Treatment      N  
+  3    2006-10-13T13:35    2006-10-13T13:47             None           N  
+  4    2006-09-11T14:19    2006-09-11T14:23             None           N  
+  5    2006-09-18T14:12    2006-09-18T14:15             None           N  
+  6    2006-09-18T13:42    2006-09-18T14:10             None           N  
+  7    2006-09-18T13:42    2006-09-18T13:49             None           N  
+  8    2006-10-07T08:50    2006-10-07T09:30             None           N  
+  9    2006-10-09T11:23    2006-10-09T11:42             Treatment      N  
+ 10    2006-10-09T11:23    2006-10-09T12:19             Treatment      N  
+ 11    2006-09-15T15:30    2006-09-15T15:52             Treatment      N  
+ 12    2006-09-15T15:26    2006-09-15T15:28             None           N  
+ 13    2006-09-22T15:23    2006-09-22T15:49             Treatment      N  
+ 14    2006-09-08T16:03    2006-09-08T16:42             None           N  

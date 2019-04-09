@@ -1,0 +1,52 @@
+CHECK LISTING DATA                                                                     11:32 Wednesday, November 23, 2016   1
+
+Obs   COL1                                     COL2
+
+  1  044-102    ^R'\ 1\line 33\line Female\line Caucasian                     \line
+  2  044-102    ^R'\ 1\line 33\line Female\line Caucasian                     \line
+  3  044-107    ^R'\ 2\line 33\line Female\line Caucasian                     \line
+  4  044-109    ^R'\ 2\line 27\line Male  \line Black                         \line
+  5  044-110    ^R'\ 2\line 26\line Male  \line Caucasian                     \line
+  6  044-110    ^R'\ 2\line 26\line Male  \line Caucasian                     \line
+  7  044-110    ^R'\ 2\line 26\line Male  \line Caucasian                     \line
+  8  044-115    ^R'\ 2\line 25\line Male  \line Caucasian                     \line
+  9  044-116    ^R'\ 1\line 39\line Male  \line Caucasian                     \line
+ 10  044-116    ^R'\ 1\line 39\line Male  \line Caucasian                     \line
+ 11  044-117    ^R'\ 1\line 31\line Male  \line Caucasian                     \line
+ 12  044-117    ^R'\ 1\line 31\line Male  \line Caucasian                     \line
+ 13  044-121    ^R'\ 1\line 36\line Female\line Caucasian                     \line
+ 14  044-125    ^R'\ 2\line 44\line Female\line Black                         \line
+
+Obs  COL3
+
+  1  ^R'\ General Disorders And Administration Site Conditions\line Chest Pressure Sensation\line Chest Pressure\line
+  2  ^R'\ Musculoskeletal And Connective Tissue Disorders\line Limb Discomfort Nos\line Right Arm Discomfort\line    
+  3  ^R'\ Psychiatric Disorders\line Anxiety Nec\line Anxiety\line                                                   
+  4  ^R'\ Nervous System Disorders\line Dizziness\line Lightheadedness\line                                          
+  5  ^R'\ Vascular Disorders\line Flushing\line Facial Flushing\line                                                 
+  6  ^R'\ Gastrointestinal Disorders\line Abdominal Distension\line Heavy Feeling In Stomach\line                    
+  7  ^R'\ Nervous System Disorders\line Paraesthesia\line Tingling In Toes\line                                      
+  8  ^R'\ Gastrointestinal Disorders\line Nausea\line Stomach Upset\line                                             
+  9  ^R'\ Vascular Disorders\line Hypertension Aggravated\line Worsening Hypertension\line                           
+ 10  ^R'\ Nervous System Disorders\line Headache Nos\line Headache\line                                              
+ 11  ^R'\ Vascular Disorders\line Flushing\line Flushed\line                                                         
+ 12  ^R'\ Nervous System Disorders\line Headache Nos\line Headache\line                                              
+ 13  ^R'\ Nervous System Disorders\line Headache Nos\line Headache\line                                              
+ 14  ^R'\ Gastrointestinal Disorders\line Nausea\line Nausea\line                                                    
+
+Obs  COL4       COL5        COL6      COL7          COL8       COL9
+
+  1  15:34    0:04:44     00:01:21    Mild        Possibly     Treatment
+  2  15:47    0:04:57     00:01:03    Mild        Possibly     Treatment
+  3  13:35    -0:00:55    00:00:12    Mild        Unrelated    None     
+  4  14:19    -0:00:02    00:00:04    Mild        Possibly     None     
+  5  13:42    -0:00:01    00:00:07    Mild        Possibly     None     
+  6  13:42    -0:00:01    00:00:28    Mild        Possibly     None     
+  7  14:12    0:00:29     00:00:03    Mild        Unrelated    None     
+  8  08:50    0:18:56     00:00:40    Mild        Unrelated    None     
+  9  11:23    1:00:14     00:00:56    Mild        Unrelated    Treatment
+ 10  11:23    1:00:14     00:00:19    Moderate    Unrelated    Treatment
+ 11  15:26    -0:00:20    00:00:02    Mild        Probably     None     
+ 12  15:30    -0:00:16    00:00:22    Severe      Probably     Treatment
+ 13  15:23    -0:00:06    00:00:26    Moderate    Probably     Treatment
+ 14  16:03    0:02:30     00:00:39    Mild        Unrelated    None     

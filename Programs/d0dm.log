@@ -1,0 +1,226 @@
+1                                                          The SAS System                            15:04 Monday, November 21, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           1.71 seconds
+      cpu time            0.17 seconds
+      
+1          /*-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    D0DM.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE SDTM DM DATASET
+7          **
+8          ** PROGRAMMER: A.CHANG
+9          **
+10         ** INPUT:      RAWLIB.DEMO
+11         **
+12         ** OUTPUT:     SDTMLIB.DM
+13         **
+14         ** PROTOCOL:   PROD-124
+15         **
+16         ** MODIFIED:   DATE        BY         NOTE
+17         **             ---------- ---------- -----------------------------------------
+18         **
+19         **-------------------------------------------------------------------------------------
+19       ! ------**
+20         ** PROGRAMMED USING SAS VERSION 9.3
+20       !       **
+21         **-------------------------------------------------------------------------------------
+21       ! ------**/
+22         
+23         %include msetup ;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+2                                         The SAS System           15:04 Monday, November 21, 2016
+
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+404        %let printme = 1 ;
+405        
+406        **-------------------------------------------------------------------------------**;
+407        **  BRING IN ORIGINAL DEMOGRAPHICS DATA                                          **;
+408        **-------------------------------------------------------------------------------**;
+409        
+410        ** NOTE: MODIFIED MAGE.SAS IN ORDER TO DISPLAY AGE TO THE TENTH		**;
+411        ** 	     DECIMAL PLACE AS REQUIRED BY MOCKUPS 						**;
+412        
+413        data dm (keep= studyid domain &pat subjid country rfstdtc rfendtc siteid brthdtc age ageu sex race) ;
+414        	attrib
+415        	    studyid  length = $8   label = 'Study Identifier                   '
+416        		domain	 length = $2   label = 'Domain Abbreviation				   '
+417        	    &pat  	 length = $16  label = 'Unique Subject Identifier          '
+418        	    subjid   length = $7   label = 'Subject Identifier for the Study   '
+419        		country  length = $3   label = 'Country							   '
+420        		rfstdtc  length = $10  label = 'Subject Reference Start Date/Time  '
+421        		rfendtc  length = $10  label = 'Subject Reference End Date/Time    '
+422        		siteid   length = $3   label = 'Study Site Identifier              '
+423        	    brthdtc  length = $10  label = 'Date/Time of Birth                 '
+424        	    age      length = 3    label = 'Age                                '
+425        	    ageu     length = $5   label = 'Age Units                          '
+426        	    sex      length = $1   label = 'Sex                                '
+427        	    race     length = $30  label = 'Race                               '
+428        	    ;
+429        	set rawlib.demo ;
+430        
+431        	**-- ASSIGN REQUIRED SDTM VARIABLES --**;
+432        	studyid = compress(proto) ;
+433        	domain = 'DM' ;
+434        	siteid = '0' || put(inv_no,2.) ;
+435        	subjid = siteid || '-' || put(patid,3.) ;
+436        	&pat = studyid || '-' || subjid ;
+437        	rfstdtc = put(icdt,mmddyy10.) ;
+438        	rfendtc = put(icdt,mmddyy10.) ;
+439        
+440        	**-- SET COUNTRY --**;
+441        	country = 'USA' ;
+442        
+443        	**-- DERIVE AGE --**;
+444        	brthdtc = put(birthdt,mmddyy10.) ;
+445        	%mage(indate=icdt,dobvar=birthdt)
+MPRINT(MAGE):   if nmiss(icdt,birthdt)=0 then age = (intck('month',birthdt,icdt) - (day(icdt) < day(birthdt))) / 12 ;
+446        	*agechk = (icdt-birthdt)/365.25 ;
+447        	ageu = 'YEARS' ;
+3 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+448        
+449        run ;
+
+NOTE: There were 34 observations read from the data set RAWLIB.DEMO.
+NOTE: The data set WORK.DM has 34 observations and 13 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.00 seconds
+      
+
+450        
+451        **-------------------------------------------------------------------------------**;
+452        **  MERGE WITH ARM AND ARMCD FROM EXPOSURE DATASET            		             **;
+453        **-------------------------------------------------------------------------------**;
+454        
+455        data ex ;
+456        	set rawlib.exposure ;
+457        	length &pat $16 ;
+458        	&pat = compress(proto) || '-' || '0' || put(inv_no,2.) || '-' || put(patid,3.) ;
+459        run ;
+
+NOTE: There were 62 observations read from the data set RAWLIB.EXPOSURE.
+NOTE: The data set WORK.EX has 62 observations and 13 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.00 seconds
+      
+
+460        
+461        proc sort data=ex nodupkey
+462        		  out=ex (keep= usubjid cohort);
+463        	by &pat ;
+464        run ;
+
+NOTE: There were 62 observations read from the data set WORK.EX.
+NOTE: SAS sort was used.
+NOTE: 31 observations with duplicate key values were deleted.
+NOTE: The data set WORK.EX has 31 observations and 2 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+465        
+466        data dm (drop= cohort) ;
+467        	attrib
+468        	    armcd  length = $1   label = 'Planned Arm Code                   '
+469        		arm	   length = $60   label = 'Description of Planned Arm	     '
+470        	    ;
+471        	merge dm (in=indm)
+472        		  ex ;
+473        	by &pat ;
+474        	armcd = put(cohort,1.) ;
+4 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+475        		 if armcd = '1' then arm = 'Bag in Infusion 1 / Bottle in Infusion 2' ;
+476        	else if armcd = '2' then arm = 'Bottle in Infusion 1 / Bag in Infusion 2' ;
+477        	if indm ;
+478        run ;
+
+NOTE: There were 34 observations read from the data set WORK.DM.
+NOTE: There were 31 observations read from the data set WORK.EX.
+NOTE: The data set WORK.DM has 34 observations and 15 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+479        
+480        **-------------------------------------------------------------------------------**;
+481        **  OUTPUT SDTM DM DATASET							                             **;
+482        **-------------------------------------------------------------------------------**;
+483        
+484        options replace ;
+485        
+486        proc sql ;
+487           create table sdtmlib.dm (label='Demography') as
+488              select studyid, domain, &pat, subjid, country, rfstdtc, rfendtc, siteid
+489        		   , brthdtc, age, ageu, sex, race, armcd, arm
+490              from dm
+491              order by &pat ;
+NOTE: Table SDTMLIB.DM created, with 34 rows and 15 columns.
+
+492        quit ;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           1.78 seconds
+      cpu time            0.00 seconds
+      
+
+493        
+494        options noreplace ;
+495        
+496        title "CHECK DEMOGRAPHY SDTM DATASET" ;
+497        proc print data=sdtmlib.dm ;
+498        	where &printme ;
+499        run ;
+
+NOTE: There were 34 observations read from the data set SDTMLIB.DM.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed pages 1-2.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.04 seconds
+      
+
+500        title ;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+5 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+NOTE: The SAS System used:
+      real time           4.02 seconds
+      cpu time            0.26 seconds
+      

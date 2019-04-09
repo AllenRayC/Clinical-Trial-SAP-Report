@@ -1,0 +1,318 @@
+1                                                          The SAS System                            15:04 Monday, November 21, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           1.73 seconds
+      cpu time            0.14 seconds
+      
+1          **-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    D2ADVS.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE ANALYSIS DATASET ADVS
+7          **
+8          ** PROGRAMMER: A.CHANG
+9          **
+10         ** INPUT:      SDTM VS DATA, ADSL
+11         **
+12         ** OUTPUT:     ADSLIB.ADVS
+13         **
+14         ** PROTOCOL:   PROD-124
+15         **
+16         ** MODIFIED:   DATE        BY          NOTE
+17         **             ----------  ----------
+17       ! -----------------------------------------------------
+18         **
+19         **-------------------------------------------------------------------------------------
+19       ! ------**;
+20         
+21         %include msetup;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+2                                         The SAS System           15:04 Monday, November 21, 2016
+
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+402        %let printme = 1 ;
+403        
+404        **-------------------------------------------------------------------------------**;
+405        **  BRING IN SDTM DATA                                                           **;
+406        **-------------------------------------------------------------------------------**;
+407        
+408        data advs ;
+409        	merge sdtmlib.vs (in=invs drop= studyid)
+410        		  adslib.adsl ;
+411        	by usubjid ;
+412        	if invs ;
+413        run ;
+
+NOTE: There were 1913 observations read from the data set SDTMLIB.VS.
+NOTE: There were 34 observations read from the data set ADSLIB.ADSL.
+NOTE: The data set WORK.ADVS has 1913 observations and 40 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+414        
+415        **-------------------------------------------------------------------------------**;
+416        **  DERIVED VARIABLES FOR TABLE/LISTINGS DISPLAY                                 **;
+417        **-------------------------------------------------------------------------------**;
+418        
+419        data advs ;
+420        	set advs ;
+421        
+422        	length vtpt $40 ;
+423        		 if vstpt = 'SCREENING & BASELINE' then vtpt = 'Screening' ;
+424        	else if vstpt = '-5 min' or vstpt = '0 min' then vtpt = vstpt ;
+425        	else if vstpt = '1 HOUR AFTER INFUSION PERIOD #2' then vtpt = '+105 min' ;
+426        	else if vstpt = 'STUDY DAY 2' then vtpt = 'Study Day 2' ;
+427        	else vtpt = '+' || vstpt ;
+428        
+429        	length vstresc $10 ;
+430        	vstresc = trim(left(put(vsstresn,5.1))) ;
+431        
+432        run ;
+
+NOTE: There were 1913 observations read from the data set WORK.ADVS.
+NOTE: The data set WORK.ADVS has 1913 observations and 42 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+3 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+433        
+434        **-------------------------------------------------------------------------------**;
+435        **  CALCULATE CHANGE IN BASELINE AND ASSIGN CLINICALLY SIGNIFICANT FLAG          **;
+436        **-------------------------------------------------------------------------------**;
+437        
+438        **-- ADD BASELINE VALUE --**;
+439        proc sort data=advs (where=(vsblfl='Y'))
+440        		  out=bl (keep = usubjid vstestcd vsstresn rename=(vsstresn=vsbl)) ;
+441        	by usubjid vstestcd ;
+442        run ;
+
+NOTE: There were 248 observations read from the data set WORK.ADVS.
+      WHERE vsblfl='Y';
+NOTE: SAS sort was used.
+NOTE: The data set WORK.BL has 248 observations and 3 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+443        
+444        proc sort data=advs ;
+445        	by usubjid vstestcd ;
+446        run ;
+
+NOTE: There were 1913 observations read from the data set WORK.ADVS.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.ADVS has 1913 observations and 42 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+447        
+448        data advs ;
+449        	merge advs (in=invs)
+450        		  bl ;
+451        	by usubjid vstestcd ;
+452        	if invs ;
+453        run ;
+
+NOTE: There were 1913 observations read from the data set WORK.ADVS.
+NOTE: There were 248 observations read from the data set WORK.BL.
+NOTE: The data set WORK.ADVS has 1913 observations and 43 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+454        
+455        proc sort data=advs ;
+456        	by usubjid vsseq ;
+457        run ;
+4 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+
+NOTE: There were 1913 observations read from the data set WORK.ADVS.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.ADVS has 1913 observations and 43 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+458        
+459        **-- CALCULATE CHANGE IN BASELINE --**;
+460        data advs ;
+461        	set advs ;
+462        
+463        	length vschgblc $10 ;
+464        	if vtpt in ('Screening','-5 min','0 min') then
+465        		do ;
+466        			vschgbl = . ;
+467        			vschgblc = 'n/a' ;	
+468        		end ;
+469        	else
+470        		do ;
+471        			vschgbl = vsstresn - vsbl ;
+472        			vschgblc = trim(left(put(vschgbl,5.1))) ;
+473        		end ;
+474        
+475        run ;
+
+NOTE: There were 1913 observations read from the data set WORK.ADVS.
+NOTE: The data set WORK.ADVS has 1913 observations and 45 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+476        
+477        **-- ASSIGN CLINICAL IMPORTANCE FLAG --**;
+478        data advs ;
+479        	set advs ;
+480        	if vschgblc ne 'n/a' then
+481        		do ;
+482        			if vstestcd='SYSBP' then
+483        				do ;
+484        						 if vsstresn gt 200 and vschgbl ge 20 then clinsig='I' ;
+485        					else if vsstresn lt 90 and vschgbl le -20 then clinsig='D' ;
+486        				end ;
+487        			else if vstestcd='DIABP' then
+488        				do ;
+489        						 if vsstresn gt 120 and vschgbl ge 10 then clinsig='I' ;
+490        					else if vsstresn lt 60 and vschgbl le -10 then clinsig='D' ;
+491        				end ;
+492        			else if vstestcd = 'OXYSAT' then
+493        				do ;
+5 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+494        					if vsstresn lt 90 and vschgbl le -5 then clinsig='D' ;
+495        				end ;
+496        
+497        			else if vstestcd='PULSE' then
+498        				do ;
+499        						 if vsstresn gt 120 and vschgbl ge 10 then clinsig='I' ;
+500        					else if vsstresn lt 45 and vschgbl le -10 then clinsig='D' ;
+501        				end ;
+502        		end ;
+503        
+504        		if clinsig in ('I','D') then vschgblc = trim(left(put(vschgbl,5.1))) || clinsig ;
+505        run ;
+
+NOTE: There were 1913 observations read from the data set WORK.ADVS.
+NOTE: The data set WORK.ADVS has 1913 observations and 46 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+506        
+507        **-------------------------------------------------------------------------------**;
+508        **  OUTPUT FINAL DATA                                                            **;
+509        **-------------------------------------------------------------------------------**;
+510        
+511        options replace ;
+512        proc sql;
+513           create table adslib.advs (label='Vital Signs Analysis Dataset') as
+514           select studyid		
+515              	, usubjid
+516           	    , subjid
+517             	, siteid
+518        		, country
+519                , age
+520                , sex
+521                , race
+522        		, arm
+523        		, armcd
+524        		, trt01p
+525        		, trt01pn
+526        	    , saffl
+527        		, fasfl
+528        		, visitnum		
+529        		, visit
+530        		, vsdtc
+531        		, vsseq
+532        		, vstpt
+533        		, vtpt	   label='Analysis Planned Time Point Name		  '
+534        		, vstestcd
+535        		, vstest
+536        		, vsorres
+537        		, vsorresu
+538        		, vsstresc
+6 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+539        		, vsstresn
+540        		, vstresc  label='Analysis Planned Time Point Name		  '
+541        		, vsstresu
+542        		, vsblfl
+543        		, vsbl	   label='Baseline Value						  '
+544        		, vschgbl  label='Analysis Change from Baseline (N)		  '
+545        		, vschgblc label='Analysis Change from Baseline 		  '
+546        		, clinsig  label='Clinically Significant Flag			  '
+547           from advs
+548           order by usubjid, vsseq ;
+NOTE: SAS threaded sort was used.
+NOTE: Table ADSLIB.ADVS created, with 1913 rows and 33 columns.
+
+549        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.37 seconds
+      cpu time            0.00 seconds
+      
+
+550        options noreplace;
+551        
+552        title "CHECK ANALYSIS DATA" ;
+553        proc print data=adslib.advs ;
+554        	where &printme ;
+555        run ;
+
+NOTE: There were 1913 observations read from the data set ADSLIB.ADVS.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed pages 1-190.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           2.15 seconds
+      cpu time            0.10 seconds
+      
+
+556        title ;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           4.49 seconds
+      cpu time            0.32 seconds
+      

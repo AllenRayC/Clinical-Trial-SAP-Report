@@ -1,0 +1,70 @@
+CHECK DATE/TIME CONVERSION AND DURATIONS                                                  15:04 Monday, November 21, 2016   1
+
+Obs        AESTDTC                  AESTDTM        AEENDTC                   AENDTM    ADURN
+
+  1    2006-10-23T15:34    23OCT06:15:34:00    2006-10-23T16:55    23OCT06:16:55:00     4860
+  2    2006-10-23T15:47    23OCT06:15:47:00    2006-10-23T16:50    23OCT06:16:50:00     3780
+  3    2006-10-13T13:35    13OCT06:13:35:00    2006-10-13T13:47    13OCT06:13:47:00      720
+  4    2006-09-11T14:19    11SEP06:14:19:00    2006-09-11T14:23    11SEP06:14:23:00      240
+  5    2006-09-18T14:12    18SEP06:14:12:00    2006-09-18T14:15    18SEP06:14:15:00      180
+  6    2006-09-18T13:42    18SEP06:13:42:00    2006-09-18T14:10    18SEP06:14:10:00     1680
+  7    2006-09-18T13:42    18SEP06:13:42:00    2006-09-18T13:49    18SEP06:13:49:00      420
+  8    2006-10-07T08:50    07OCT06:08:50:00    2006-10-07T09:30    07OCT06:09:30:00     2400
+  9    2006-10-09T11:23    09OCT06:11:23:00    2006-10-09T11:42    09OCT06:11:42:00     1140
+ 10    2006-10-09T11:23    09OCT06:11:23:00    2006-10-09T12:19    09OCT06:12:19:00     3360
+ 11    2006-09-15T15:30    15SEP06:15:30:00    2006-09-15T15:52    15SEP06:15:52:00     1320
+ 12    2006-09-15T15:26    15SEP06:15:26:00    2006-09-15T15:28    15SEP06:15:28:00      120
+ 13    2006-09-22T15:23    22SEP06:15:23:00    2006-09-22T15:49    22SEP06:15:49:00     1560
+ 14    2006-09-08T16:03    08SEP06:16:03:00    2006-09-08T16:42    08SEP06:16:42:00     2340
+CHECK ANALYSIS DATA                                                                       15:04 Monday, November 21, 2016   2
+
+Obs STUDYID         USUBJID         SUBJID     SITEID    AESEQ    AETERM                      AEDECOD
+
+  1 PROD-124    PROD-124-044-102    044-102     044        1      CHEST PRESSURE              CHEST PRESSURE SENSATION
+  2 PROD-124    PROD-124-044-102    044-102     044        2      RIGHT ARM DISCOMFORT        LIMB DISCOMFORT NOS     
+  3 PROD-124    PROD-124-044-107    044-107     044        1      ANXIETY                     ANXIETY NEC             
+  4 PROD-124    PROD-124-044-109    044-109     044        1      LIGHTHEADEDNESS             DIZZINESS               
+  5 PROD-124    PROD-124-044-110    044-110     044        1      FACIAL FLUSHING             FLUSHING                
+  6 PROD-124    PROD-124-044-110    044-110     044        2      HEAVY FEELING IN STOMACH    ABDOMINAL DISTENSION    
+  7 PROD-124    PROD-124-044-110    044-110     044        3      TINGLING IN TOES            PARAESTHESIA            
+  8 PROD-124    PROD-124-044-115    044-115     044        1      STOMACH UPSET               NAUSEA                  
+  9 PROD-124    PROD-124-044-116    044-116     044        1      WORSENING HYPERTENSION      HYPERTENSION AGGRAVATED 
+ 10 PROD-124    PROD-124-044-116    044-116     044        2      HEADACHE                    HEADACHE NOS            
+ 11 PROD-124    PROD-124-044-117    044-117     044        1      FLUSHED                     FLUSHING                
+ 12 PROD-124    PROD-124-044-117    044-117     044        2      HEADACHE                    HEADACHE NOS            
+ 13 PROD-124    PROD-124-044-121    044-121     044        1      HEADACHE                    HEADACHE NOS            
+ 14 PROD-124    PROD-124-044-125    044-125     044        1      NAUSEA                      NAUSEA                  
+
+Obs AEBODSYS                                                 AESTDTC               AESTDTM     AEENDTC                AENDTM
+
+  1 GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS 2006-10-23T15:34 23OCT06:15:34:00 2006-10-23T16:55 23OCT06:16:55:00
+  2 MUSCULOSKELETAL AND CONNECTIVE TISSUE DISORDERS      2006-10-23T15:47 23OCT06:15:47:00 2006-10-23T16:50 23OCT06:16:50:00
+  3 PSYCHIATRIC DISORDERS                                2006-10-13T13:35 13OCT06:13:35:00 2006-10-13T13:47 13OCT06:13:47:00
+  4 NERVOUS SYSTEM DISORDERS                             2006-09-11T14:19 11SEP06:14:19:00 2006-09-11T14:23 11SEP06:14:23:00
+  5 VASCULAR DISORDERS                                   2006-09-18T13:42 18SEP06:13:42:00 2006-09-18T13:49 18SEP06:13:49:00
+  6 GASTROINTESTINAL DISORDERS                           2006-09-18T13:42 18SEP06:13:42:00 2006-09-18T14:10 18SEP06:14:10:00
+  7 NERVOUS SYSTEM DISORDERS                             2006-09-18T14:12 18SEP06:14:12:00 2006-09-18T14:15 18SEP06:14:15:00
+  8 GASTROINTESTINAL DISORDERS                           2006-10-07T08:50 07OCT06:08:50:00 2006-10-07T09:30 07OCT06:09:30:00
+  9 VASCULAR DISORDERS                                   2006-10-09T11:23 09OCT06:11:23:00 2006-10-09T12:19 09OCT06:12:19:00
+ 10 NERVOUS SYSTEM DISORDERS                             2006-10-09T11:23 09OCT06:11:23:00 2006-10-09T11:42 09OCT06:11:42:00
+ 11 VASCULAR DISORDERS                                   2006-09-15T15:26 15SEP06:15:26:00 2006-09-15T15:28 15SEP06:15:28:00
+ 12 NERVOUS SYSTEM DISORDERS                             2006-09-15T15:30 15SEP06:15:30:00 2006-09-15T15:52 15SEP06:15:52:00
+ 13 NERVOUS SYSTEM DISORDERS                             2006-09-22T15:23 22SEP06:15:23:00 2006-09-22T15:49 22SEP06:15:49:00
+ 14 GASTROINTESTINAL DISORDERS                           2006-09-08T16:03 08SEP06:16:03:00 2006-09-08T16:42 08SEP06:16:42:00
+
+Obs          TRTSDTM  ADURN   ADURU   AESEVN  AESEV     ASEV      AERELN    AEREL      AREL     AEACN  AEACNOTH   AESER
+
+  1 23OCT06:10:50:00   4860  SECONDS     1    MILD      Mild         2    POSSIBLY   Possibly          Treatment    N  
+  2 23OCT06:10:50:00   3780  SECONDS     1    MILD      Mild         2    POSSIBLY   Possibly          Treatment    N  
+  3 13OCT06:14:30:00    720  SECONDS     1    MILD      Mild         1    UNRELATED  Unrelated         None         N  
+  4 11SEP06:14:21:00    240  SECONDS     1    MILD      Mild         2    POSSIBLY   Possibly          None         N  
+  5 18SEP06:13:43:00    420  SECONDS     1    MILD      Mild         2    POSSIBLY   Possibly          None         N  
+  6 18SEP06:13:43:00   1680  SECONDS     1    MILD      Mild         2    POSSIBLY   Possibly          None         N  
+  7 18SEP06:13:43:00    180  SECONDS     1    MILD      Mild         1    UNRELATED  Unrelated         None         N  
+  8 06OCT06:13:54:00   2400  SECONDS     1    MILD      Mild         1    UNRELATED  Unrelated         None         N  
+  9 08OCT06:11:09:00   3360  SECONDS     1    MILD      Mild         1    UNRELATED  Unrelated         Treatment    N  
+ 10 08OCT06:11:09:00   1140  SECONDS     2    MODERATE  Moderate     1    UNRELATED  Unrelated         Treatment    N  
+ 11 15SEP06:15:46:00    120  SECONDS     1    MILD      Mild         3    PROBABLY   Probably          None         N  
+ 12 15SEP06:15:46:00   1320  SECONDS     3    SEVERE    Severe       3    PROBABLY   Probably          Treatment    N  
+ 13 22SEP06:15:29:00   1560  SECONDS     2    MODERATE  Moderate     3    PROBABLY   Probably          Treatment    N  
+ 14 08SEP06:13:33:00   2340  SECONDS     1    MILD      Mild         1    UNRELATED  Unrelated         None         N  

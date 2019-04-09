@@ -1,0 +1,82 @@
+CHECK DEMOGRAPHY SDTM DATASET                                                             15:04 Monday, November 21, 2016   1
+
+Obs    STUDYID     DOMAIN        USUBJID         SUBJID     COUNTRY     RFSTDTC       RFENDTC      SITEID     BRTHDTC
+
+  1    PROD-124      DM      PROD-124-044-101    044-101      USA      10/09/2006    10/09/2006     044      07/29/1962
+  2    PROD-124      DM      PROD-124-044-102    044-102      USA      10/23/2006    10/23/2006     044      05/15/1973
+  3    PROD-124      DM      PROD-124-044-103    044-103      USA      07/17/2006    07/17/2006     044      10/09/1979
+  4    PROD-124      DM      PROD-124-044-104    044-104      USA      11/05/2006    11/05/2006     044      04/20/1973
+  5    PROD-124      DM      PROD-124-044-105    044-105      USA      11/05/2006    11/05/2006     044      08/05/1962
+  6    PROD-124      DM      PROD-124-044-106    044-106      USA      10/23/2006    10/23/2006     044      08/14/1975
+  7    PROD-124      DM      PROD-124-044-107    044-107      USA      10/13/2006    10/13/2006     044      02/23/1974
+  8    PROD-124      DM      PROD-124-044-108    044-108      USA      07/16/2006    07/16/2006     044      09/11/1980
+  9    PROD-124      DM      PROD-124-044-109    044-109      USA      09/11/2006    09/11/2006     044      06/03/1979
+ 10    PROD-124      DM      PROD-124-044-110    044-110      USA      09/18/2006    09/18/2006     044      03/15/1981
+ 11    PROD-124      DM      PROD-124-044-111    044-111      USA      11/12/2006    11/12/2006     044      07/11/1964
+ 12    PROD-124      DM      PROD-124-044-112    044-112      USA      07/17/2006    07/17/2006     044      07/11/1974
+ 13    PROD-124      DM      PROD-124-044-113    044-113      USA      09/17/2006    09/17/2006     044      04/08/1967
+ 14    PROD-124      DM      PROD-124-044-114    044-114      USA      09/25/2006    09/25/2006     044      12/24/1976
+ 15    PROD-124      DM      PROD-124-044-115    044-115      USA      10/06/2006    10/06/2006     044      06/30/1981
+ 16    PROD-124      DM      PROD-124-044-116    044-116      USA      10/08/2006    10/08/2006     044      01/03/1968
+ 17    PROD-124      DM      PROD-124-044-117    044-117      USA      09/15/2006    09/15/2006     044      11/09/1975
+ 18    PROD-124      DM      PROD-124-044-118    044-118      USA      09/10/2006    09/10/2006     044      01/30/1973
+ 19    PROD-124      DM      PROD-124-044-119    044-119      USA      09/15/2006    09/15/2006     044      08/08/1974
+ 20    PROD-124      DM      PROD-124-044-120    044-120      USA      10/08/2006    10/08/2006     044      01/11/1978
+ 21    PROD-124      DM      PROD-124-044-121    044-121      USA      09/22/2006    09/22/2006     044      10/16/1970
+ 22    PROD-124      DM      PROD-124-044-122    044-122      USA      09/11/2006    09/11/2006     044      01/07/1976
+ 23    PROD-124      DM      PROD-124-044-123    044-123      USA      09/25/2006    09/25/2006     044      07/20/1977
+ 24    PROD-124      DM      PROD-124-044-124    044-124      USA      09/18/2006    09/18/2006     044      03/31/1981
+
+Obs      AGE      AGEU     SEX    RACE         ARMCD                      ARM
+
+  1    44.1641    YEARS     F     BLACK          1      Bag in Infusion 1 / Bottle in Infusion 2
+  2    33.4141    YEARS     F     CAUCASIAN      1      Bag in Infusion 1 / Bottle in Infusion 2
+  3    26.7500    YEARS     F     CAUCASIAN                                                     
+  4    33.5000    YEARS     F     BLACK          1      Bag in Infusion 1 / Bottle in Infusion 2
+  5    44.2500    YEARS     M     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2
+  6    31.1641    YEARS     M     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2
+  7    32.5781    YEARS     F     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2
+  8    25.8320    YEARS     M     CAUCASIAN                                                     
+  9    27.2500    YEARS     M     BLACK          2      Bottle in Infusion 1 / Bag in Infusion 2
+ 10    25.5000    YEARS     M     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2
+ 11    42.3281    YEARS     M     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2
+ 12    32.0000    YEARS     F     BLACK                                                         
+ 13    39.4141    YEARS     M     CAUCASIAN      1      Bag in Infusion 1 / Bottle in Infusion 2
+ 14    29.7500    YEARS     F     CAUCASIAN      1      Bag in Infusion 1 / Bottle in Infusion 2
+ 15    25.2500    YEARS     M     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2
+ 16    38.7500    YEARS     M     CAUCASIAN      1      Bag in Infusion 1 / Bottle in Infusion 2
+ 17    30.8320    YEARS     M     CAUCASIAN      1      Bag in Infusion 1 / Bottle in Infusion 2
+ 18    33.5781    YEARS     M     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2
+ 19    32.0781    YEARS     F     BLACK          2      Bottle in Infusion 1 / Bag in Infusion 2
+ 20    28.6641    YEARS     M     CAUCASIAN      1      Bag in Infusion 1 / Bottle in Infusion 2
+ 21    35.9141    YEARS     F     CAUCASIAN      1      Bag in Infusion 1 / Bottle in Infusion 2
+ 22    30.6641    YEARS     M     OTHER          1      Bag in Infusion 1 / Bottle in Infusion 2
+ 23    29.1641    YEARS     M     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2
+ 24    25.4141    YEARS     F     CAUCASIAN      1      Bag in Infusion 1 / Bottle in Infusion 2
+CHECK DEMOGRAPHY SDTM DATASET                                                             15:04 Monday, November 21, 2016   2
+
+Obs    STUDYID     DOMAIN        USUBJID         SUBJID     COUNTRY     RFSTDTC       RFENDTC      SITEID     BRTHDTC
+
+ 25    PROD-124      DM      PROD-124-044-125    044-125      USA      09/08/2006    09/08/2006     044      04/16/1962
+ 26    PROD-124      DM      PROD-124-044-126    044-126      USA      10/08/2006    10/08/2006     044      01/27/1960
+ 27    PROD-124      DM      PROD-124-044-127    044-127      USA      10/06/2006    10/06/2006     044      08/22/1979
+ 28    PROD-124      DM      PROD-124-044-128    044-128      USA      11/03/2006    11/03/2006     044      04/05/1966
+ 29    PROD-124      DM      PROD-124-044-129    044-129      USA      09/22/2006    09/22/2006     044      05/13/1968
+ 30    PROD-124      DM      PROD-124-044-130    044-130      USA      10/09/2006    10/09/2006     044      02/13/1977
+ 31    PROD-124      DM      PROD-124-044-131    044-131      USA      10/20/2006    10/20/2006     044      01/22/1982
+ 32    PROD-124      DM      PROD-124-044-132    044-132      USA      09/10/2006    09/10/2006     044      06/19/1977
+ 33    PROD-124      DM      PROD-124-044-133    044-133      USA      10/16/2006    10/16/2006     044      01/28/1983
+ 34    PROD-124      DM      PROD-124-044-134    044-134      USA      09/17/2006    09/17/2006     044      09/20/1984
+
+Obs      AGE      AGEU     SEX    RACE         ARMCD                      ARM
+
+ 25    44.3281    YEARS     F     BLACK          2      Bottle in Infusion 1 / Bag in Infusion 2
+ 26    46.6641    YEARS     F     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2
+ 27    27.0820    YEARS     F     CAUCASIAN      1      Bag in Infusion 1 / Bottle in Infusion 2
+ 28    40.5000    YEARS     F     CAUCASIAN      1      Bag in Infusion 1 / Bottle in Infusion 2
+ 29    38.3281    YEARS     M     BLACK          1      Bag in Infusion 1 / Bottle in Infusion 2
+ 30    29.5820    YEARS     M     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2
+ 31    24.6641    YEARS     F     BLACK          2      Bottle in Infusion 1 / Bag in Infusion 2
+ 32    29.1641    YEARS     M     CAUCASIAN      1      Bag in Infusion 1 / Bottle in Infusion 2
+ 33    23.6641    YEARS     M     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2
+ 34    21.9141    YEARS     M     CAUCASIAN      2      Bottle in Infusion 1 / Bag in Infusion 2

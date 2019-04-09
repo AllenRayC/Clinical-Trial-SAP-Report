@@ -1,0 +1,225 @@
+1                                                          The SAS System                            14:39 Monday, November 21, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           0.98 seconds
+      cpu time            0.18 seconds
+      
+1          **-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    LDM.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE DEMOGRAPHICS LISTING 2 - DEMOGRAPHIC AND BASELINE CHARACTERISTICS
+7          **
+8          ** PROGRAMMER: A.CHANG
+9          **
+10         ** INPUT:      ADSL DATA
+11         **
+12         ** OUTPUT:     LISTING 2
+13         **
+14         ** PROTOCOL:   PROD-124
+15         **
+16         ** MODIFIED:   DATE        BY          NOTE
+17         **             ----------  ----------
+17       ! -----------------------------------------------------
+18         **
+19         **-------------------------------------------------------------------------------------
+19       ! ------**;
+20         
+21         %include msetup ;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+2                                         The SAS System           14:39 Monday, November 21, 2016
+
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+402        %let printme = 1 ;
+403        
+404        /*
+405        7.4 Analysis of Demographic and Baseline Characteristics
+406        
+407        Demographic and baseline characteristics, including age, gender, race, weight, height and medical history
+408        will be presented in data listings and summarized for all subjects who received PROD using summary statistics
+409        (n, mean, standard deviation, median, minimum and maximum for age, weight, and height; n and percentages for
+410        categories of gender, race and medical history) by cohort.
+411         */
+412        
+413        /*
+414        MARGINS?! SAP AND MOCKUP DO NOT MATCH
+415        
+416        MARGINS USED : TOP 0.75in, BOT 0.75in, SIDES 1in
+417        
+418        NEED TO CHANGE PERPAGE VARIABLE IF MARGINS CHANGE
+419        
+420        */
+421        
+422        
+423        **-------------------------------------------------------------------------------**;
+424        **  BRING IN ANALYSIS DATA                                                       **;
+425        **-------------------------------------------------------------------------------**;
+426        
+427        data dm ;
+428        	set adslib.adsl (where=(saffl eq 'Y')) ;
+429        	col1 = subjid ;
+430        	col2 = armcd ;
+431        	col3 = input(rfstdtc, mmddyy10.) ;
+432        	col4 = input(brthdtc, mmddyy10.) ;
+433        	col5 = age ;
+434        	col6 = sexgr1 ;
+435        	col7 = propcase(race) ;
+436        	col8 = weight ;
+437        	col9 = height ;
+438        run ;
+
+NOTE: There were 31 observations read from the data set ADSLIB.ADSL.
+      WHERE saffl='Y';
+NOTE: The data set WORK.DM has 31 observations and 35 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.00 seconds
+      
+
+439        
+440        title 'CHECK LISTING DATA' ;
+3 The SAS System                                                                              14:39 Monday, November 21, 2016
+
+441        proc print data=dm ;
+442        	var col1 - col9 ;
+443        	where &printme ;
+444        run ;
+
+NOTE: There were 31 observations read from the data set WORK.DM.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 1.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.01 seconds
+      
+
+445        title ;
+446        
+447        **-------------------------------------------------------------------------------**;
+448        **  FORMAT DATA FOR REPORT                                                       **;
+449        **-------------------------------------------------------------------------------**;
+450        
+451        data dm ;
+452        	set dm ;
+453        
+454        	**-- SET NUMBER OF RECORDS TO DISPLAY PER PAGE --**;
+455        	perpage = 28 ;
+456        
+457        	**-- PAGEVAR USED AS ORDER VARIABLE IN PROC REPORT 				 --**;
+458        	**-- USED TO CREATE SPACE BETWEEN HEADING AND FIRST OBS PER PAGE --**;
+459        	pagevar = ceil(_n_/perpage) ;
+460        run ;
+
+NOTE: There were 31 observations read from the data set WORK.DM.
+NOTE: The data set WORK.DM has 31 observations and 37 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+461        
+462        **-------------------------------------------------------------------------------**;
+463        **  CREATE REPORT                                                                **;
+464        **-------------------------------------------------------------------------------**;
+465        
+466        **----- RTF SETUP -----**;
+467        options nodate nonumber orientation=landscape missing=' ';
+The SAS System
+
+468        ods listing close ;
+469        ods escapechar='^' ;
+470        ods rtf style=TStyleRTF file="&opath.\L2.rtf" ;
+NOTE: Writing RTF Body file: E:\PROD124\Output\L2.rtf
+471        ** NOTE: MODIFIED OPTEMPLT.SAS **;
+472        
+473        **----- TITLES/FOOTNOTES -----**;
+474        title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+475        title2 j=left "Protocol PROD-124" j=right "&sysdate9"  ;
+476        title3 j=center "Listing 2" ;
+477        title4 ;
+478        title5 j=center "Demographics and Baseline Characteristics" ;
+479        
+480        footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+481        footnote2 h=10pt j=left "^{super a} Cohort 1 Sequence: Bag in Infusion 1 / Bottle in Infusion 2"
+482        						", Cohort 2 Sequence: Bottle in Infusion 1 / Bag in Infusion 2." ;
+483        footnote3 ;
+484        footnote4 j=left "Data Source: ADSL" j=right "Program: ldm.sas" ;
+485        
+486        **----- REPORT DEFINITION -----**;
+487        proc report data=dm missing nowindows center split='|' ;
+488        	column pagevar subjid col1 - col9 ;
+489        
+490        	define pagevar / order noprint ;
+491        	define subjid / order noprint ;
+492        
+493        	define col1 /"Subject" style(header)=[just=left] style(column)=[just=left cellwidth=0.9in] ;
+494        	define col2 /"Cohort^{super a}" style(header)=[just=left] style(column)=[just=left cellwidth=0.9in] ;
+495        	define col3 /"Informed|Consent|Date" style(header)=[just=left] style(column)=[just=left cellwidth=0.9in] f=date9. ;
+496        	define col4 /"Date of|Birth" style(header)=[just=left] style(column)=[just=left cellwidth=0.9in] f=date9. ;
+497        	define col5 /"Age|(yrs)" style(header)=[just=center] style(column)=[just=center cellwidth=0.9in] f=5.1 ;
+498        	define col6 /"Sex" style(header)=[just=center] style(column)=[just=center cellwidth=0.9in] ;
+499        	define col7 /"Race" style(header)=[just=center] style(column)=[just=center cellwidth=1.3in] ;
+500        	define col8 /"Weight|(kg)" style(header)=[just=center] style(column)=[just=center cellwidth=0.9in] f=5.1 ;
+501        	define col9 /"Height|(inch)" style(header)=[just=center] style(column)=[just=center cellwidth=0.9in] f=5.1 ;
+502        
+503        	compute before pagevar ;
+504        		line '' ;
+505        	endcomp ;
+506        
+The SAS System
+
+507        run;
+
+NOTE: Multiple concurrent threads will be used to summarize data.
+NOTE: There were 31 observations read from the data set WORK.DM.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+508        
+509        run ;
+510        
+511        **----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+512        ods rtf close ;
+513        ods listing ;
+514        
+515        options date number ;
+516        title ;
+517        footnote ;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           1.75 seconds
+      cpu time            0.29 seconds
+      

@@ -1,0 +1,291 @@
+1                                                          The SAS System                         11:32 Wednesday, November 23, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           0.89 seconds
+      cpu time            0.14 seconds
+      
+1          **-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    LAE.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE ADVERSE EVENTS LISTING 6 - ADVERSE EVENTS
+7          **
+8          ** PROGRAMMER: A.CHANG
+9          **
+10         ** INPUT:      ADAE, ADSL DATA
+11         **
+12         ** OUTPUT:     LISTING 6
+13         **
+14         ** PROTOCOL:   PROD-124
+15         **
+16         ** MODIFIED:   DATE        BY          NOTE
+17         **             ----------  ----------
+17       ! -----------------------------------------------------
+18         **
+19         **-------------------------------------------------------------------------------------
+19       ! ------**;
+20         
+21         %include msetup ;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+2                                         The SAS System        11:32 Wednesday, November 23, 2016
+
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+402        %let printme = 1 ;
+403        
+404        **-------------------------------------------------------------------------------**;
+405        **  BRING IN ADAE DATA                                             		         **;
+406        **-------------------------------------------------------------------------------**;
+407        
+408        data ae ;
+409        	merge adslib.adae (in=inae)
+410        		  adslib.adsl ;
+411        	by usubjid ;
+412        	if inae ;
+413        run ;
+
+INFO: The variable STUDYID on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+INFO: The variable SUBJID on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+INFO: The variable SITEID on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+INFO: The variable TRTSDTM on data set ADSLIB.ADAE will be overwritten by data set ADSLIB.ADSL.
+NOTE: There were 14 observations read from the data set ADSLIB.ADAE.
+NOTE: There were 34 observations read from the data set ADSLIB.ADSL.
+NOTE: The data set WORK.AE has 14 observations and 45 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+414        
+415        **-------------------------------------------------------------------------------**;
+416        **  DERIVE VARIABLES FOR LISTING DISPLAY                                		 **;
+417        **-------------------------------------------------------------------------------**;
+418        
+419        data ae ;
+420        	set ae ;
+421        
+422        	**-- ONSET TIME --**;
+423        	asttm = substr(aestdtc,12,5) ;
+424        
+425        	**-- DERIVE ONSET TIME RELATIVE TO PROD ADMINISTRATION --**;
+426        	** NOTE: RETURNS LOG MESSAGE WHEN TIME IS GREATER THAN 10 DAYS		**;
+427        	arelsdtm = aestdtm - trtsdtm ;
+428        
+429        		 if 0 le abs(arelsdtm) le 86399 then arelsdtc = substr('0:'||put(abs(arelsdtm), tod.),1,7) ;
+430        	else if abs(arelsdtm) ge 86400 then
+431        		do ;
+432        			days = floor(abs(arelsdtm)/86400) ;
+433        				 if days le 9 then arelsdtc = substr(put(days,1.)||':'||put(mod(abs(arelsdtm),86400), tod.),1,7) ;
+434        			else if days ge 10 then put "WARN" "ING: TIME GREATER THAN 10 DAYS." ;
+435        		end ;
+436        	else if arelsdtm eq . then arelsdtc = ' ' ;
+3 The SAS System                                                                           11:32 Wednesday, November 23, 2016
+
+437        
+438        	if arelsdtm lt 0 then arelsdtc = '-' || arelsdtc ;
+439        
+440        	**-- DERIVE ADUR --**;
+441        	** NOTE: RETURNS LOG MESSAGE WHEN DURATION IS NEGATIVE OR OVER 100 DAYS			**;
+442        		 if 0 le adurn le 86399 then adur = substr('00:'||put(adurn, tod.),1,8) ;
+443        	else if adurn ge 86400 then
+444        		do ;
+445        			days = floor(adurn/86400) ;
+446        				 if days le 99 then adur = substr(put(days,z2.)||':'||put(mod(adurn,86400), tod.),1,8) ;
+447        			else if days ge 100 then put "WARN" "ING: DURATION GREATER THAN 100 DAYS." ;
+448        		end ;
+449        	else if adurn lt 0 then put "WARN" "ING: DURATION IS NEGATIVE, CHECK DATA." ;
+450        	else if adurn eq . then adur = 'ongoing' ;
+451        
+452        run ;
+
+NOTE: There were 14 observations read from the data set WORK.AE.
+NOTE: The data set WORK.AE has 14 observations and 50 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+453        
+454        **-------------------------------------------------------------------------------**;
+455        **  FORMAT DATA FOR REPORT                                                       **;
+456        **-------------------------------------------------------------------------------**;
+457        
+458        data ae ;
+459        	set ae ;
+460        	length col1 - col9 $800 ;
+461        	col1 = subjid ;
+462        	col2 = "^R'\ "
+463        		   || armcd || '\line '
+464        		   || compress(put(age,3.0)) || '\line '
+465        		   || sexgr1 || '\line '
+466        		   || racegr1 || '\line '
+467        		   ;
+468        	col3 = "^R'\ "
+469        		   || trim(left(propcase(aebodsys))) || '\line '
+470        		   || trim(left(propcase(aedecod))) || '\line '
+471        		   || trim(left(propcase(aeterm))) || '\line '
+472        		   ;
+473        	col4 = asttm ;
+474        	col5 = arelsdtc ;
+475        	col6 = adur ;
+476        	col7 = asev ;
+477        	col8 = arel ;
+478        	col9 = aeacnoth ;
+479        run ;
+
+NOTE: There were 14 observations read from the data set WORK.AE.
+4 The SAS System                                                                           11:32 Wednesday, November 23, 2016
+
+NOTE: The data set WORK.AE has 14 observations and 59 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+480        
+481        title 'CHECK LISTING DATA' ;
+482        proc print data=ae ;
+483        	var col1 - col9 ;
+484        	where &printme ;
+485        run ;
+
+NOTE: There were 14 observations read from the data set WORK.AE.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 1.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+486        title ;
+487        
+488        data ae ;
+489        	set ae ;
+490        
+491        	**-- SET NUMBER OF RECORDS TO DISPLAY PER PAGE --**;
+492        	perpage = 4 ;
+493        
+494        	**-- PAGEVAR USED AS ORDER VARIABLE IN PROC REPORT 				 --**;
+495        	**-- USED TO CREATE SPACE BETWEEN HEADING AND FIRST OBS PER PAGE --**;
+496        	pagevar = ceil(_n_/perpage) ;
+497        run ;
+
+NOTE: There were 14 observations read from the data set WORK.AE.
+NOTE: The data set WORK.AE has 14 observations and 61 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+498        
+499        **-------------------------------------------------------------------------------**;
+500        **  CREATE REPORT                                                                **;
+501        **-------------------------------------------------------------------------------**;
+502        
+503        **----- RTF SETUP -----**;
+504        options nodate nonumber orientation=landscape missing=' ';
+The SAS System
+
+505        ods listing close ;
+506        ods escapechar='^' ;
+507        ods rtf style=TStyleRTF file="&opath.\L6.rtf" ;
+NOTE: Writing RTF Body file: E:\PROD124\Output\L6.rtf
+508        
+509        **----- TITLES/FOOTNOTES -----**;
+510        title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+511        title2 j=left "Protocol PROD-124" j=right "&sysdate9"  ;
+512        title3 j=center "Listing 6" ;
+513        title4 ;
+514        title5 j=center "Adverse Events" ;
+515        
+516        footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+517        footnote2 h=10pt j=left "^{super a} Cohort 1 Sequence: Bag in Infusion 1 / Bottle in Infusion 2"
+518        						", Cohort 2 Sequence: Bottle in Infusion 1 / Bag in Infusion 2." ;
+519        footnote3 h=10pt j=left "^{super b} Relative to the start of PROD administration. Negative times "
+520        						"indicate occurrence prior to the start of PROD administration." ;
+521        footnote4 h=10pt j=left "^{super c} Duration (D:H:M): D = Days; H = Hours; M = Minutes. " ;
+522        footnote5 ;
+523        footnote6 j=left "Data Source: ADAE, ADSL" j=right "Program: lae.sas" ;
+524        
+525        **----- REPORT DEFINITION -----**;
+526        proc report data=ae missing nowindows center split='|' ;
+527        	column pagevar subjid arelsdtm col1 - col9 ;
+528        
+529        	define pagevar / order noprint ;
+530        	define subjid / order noprint ;
+531        	define arelsdtm / order noprint ;
+532        
+533        	define col1 /"Subject" style(header)=[just=left] style(column)=[just=left cellwidth=0.8in] ;
+534        	define col2 /"Cohort^{super a}|Age|Sex|Race" style(header)=[just=left] style(column)=[just=left cellwidth=0.8in] ;
+535        	define col3 /"MedDRA Body System|MedDRA Preferred Term|CRF Verbatim Term" style(header)=[just=left]
+535      ! style(column)=[just=left cellwidth=2in] ;
+536        	define col4 /"Onset|Time|(HH:MM)" style(header)=[just=center] style(column)=[just=center cellwidth=0.8in] ;
+537        	define col5 /"Onset|Time^{super b}|Relative|to PROD|(D:H:M)" style(header)=[just=center] style(column)=[just=center
+537      ! cellwidth=0.8in] ;
+538        	define col6 /"Duration|(D:H:M)^{super c}" style(header)=[just=center] style(column)=[just=center cellwidth=0.8in] ;
+539        	define col7 /"Severity" style(header)=[just=center] style(column)=[just=center cellwidth=0.8in] ;
+540        	define col8 /"Relationship|to PROD" style(header)=[just=center] style(column)=[just=center cellwidth=0.8in] ;
+541        	define col9 /"Action Taken" style(header)=[just=center] style(column)=[just=center cellwidth=0.8in] ;
+The SAS System
+
+542        
+543        	break after pagevar / page ;
+544        
+545        	compute before subjid ;
+546        		line '' ;
+547        	endcomp ;
+548        
+549        run;
+
+NOTE: Multiple concurrent threads will be used to summarize data.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+NOTE: There were 14 observations read from the data set WORK.AE.
+
+550        
+551        run ;
+552        
+553        **----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+554        ods rtf close ;
+555        ods listing ;
+556        
+557        options date number ;
+558        title ;
+559        footnote ;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           1.54 seconds
+      cpu time            0.35 seconds
+      

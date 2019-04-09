@@ -1,0 +1,207 @@
+1                                                          The SAS System                            15:04 Monday, November 21, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           1.54 seconds
+      cpu time            0.17 seconds
+      
+1          **-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    D2ADAE.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE ANALYSIS DATASET ADAE
+7          **
+8          ** PROGRAMMER: A.CHANG
+9          **
+10         ** INPUT:      SDTM AE DATA, ADSL
+11         **
+12         ** OUTPUT:     ADSLIB.ADAE
+13         **
+14         ** PROTOCOL:   PROD-124
+15         **
+16         ** MODIFIED:   DATE        BY          NOTE
+17         **             ----------  ----------
+17       ! -----------------------------------------------------
+18         **
+19         **-------------------------------------------------------------------------------------
+19       ! ------**;
+20         
+21         %include msetup;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+2                                         The SAS System           15:04 Monday, November 21, 2016
+
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+402        %let printme = 1 ;
+403        
+404        **-------------------------------------------------------------------------------**;
+405        **  BRING IN AE AND DM SDTM DATA                                                 **;
+406        **-------------------------------------------------------------------------------**;
+407        
+408        data adae ;
+409        	merge sdtmlib.ae (in=inae drop= domain studyid)
+410        		  adslib.adsl ;
+411        	by usubjid ;
+412        	if inae ;
+413        run ;
+
+NOTE: There were 14 observations read from the data set SDTMLIB.AE.
+NOTE: There were 34 observations read from the data set ADSLIB.ADSL.
+NOTE: The data set WORK.ADAE has 14 observations and 39 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+414        
+415        **-------------------------------------------------------------------------------**;
+416        **  DERIVED VARIABLES FOR TABLE/LISTINGS 		                                 **;
+417        **-------------------------------------------------------------------------------**;
+418        
+419        data adae ;
+420        	set adae ;
+421        	
+422        	**-- CONVERT CHARACTER DATE/TIME TO NUMERIC --**;
+423        	if aestdtc ne '' then
+424        		aestdtm = dhms(input(scan(aestdtc,1,'T'),YYMMDD10.)
+425        					, input(scan(scan(aestdtc,2,'T'),1,':'),2.)
+426        					, input(scan(scan(aestdtc,2,'T'),2,':'),2.)
+427        					, 0) ;
+428        	else aestdtm = . ;
+429        	if aeendtc ne '' then
+430        		aendtm = dhms(input(scan(aeendtc,1,'T'),YYMMDD10.)
+431        					, input(scan(scan(aeendtc,2,'T'),1,':'),2.)
+432        					, input(scan(scan(aeendtc,2,'T'),2,':'),2.)
+433        					, 0) ;
+434        	else aendtm = . ;
+435        	format aestdtm aendtm datetime16. ;
+436        
+437        	**-- CALCULATE AE DURATION --**;
+438        	adurn = aendtm - aestdtm ;
+439        	aduru = 'SECONDS' ;
+440        
+3 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+441        	**-- ASEV AND AREL --**;
+442        	asev = propcase(aesev) ;
+443        	arel = propcase(aerel) ;
+444        
+445        run ;
+
+NOTE: There were 14 observations read from the data set WORK.ADAE.
+NOTE: The data set WORK.ADAE has 14 observations and 45 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+446        
+447        title 'CHECK DATE/TIME CONVERSION AND DURATIONS' ;
+448        proc print data=adae ;
+449        	var aestdtc aestdtm aeendtc aendtm adurn ;
+450        	where &printme ;
+451        run ;
+
+NOTE: There were 14 observations read from the data set WORK.ADAE.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 1.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+452        title ;
+453        
+454        **-------------------------------------------------------------------------------**;
+455        **  OUTPUT FINAL DATA                                                            **;
+456        **-------------------------------------------------------------------------------**;
+457        
+458        options replace ;
+459        proc sql;
+460           create table adslib.adae (label='Adverse Event Analysis Dataset ') as
+461           select studyid
+462              	, usubjid
+463           	    , subjid
+464             	, siteid
+465        		, aeseq
+466        		, aeterm
+467        		, aedecod
+468        		, aebodsys
+469        		, aestdtc
+470        		, aestdtm  label='Analysis Start Date/Time 				  	'
+471        		, aeendtc
+472        		, aendtm   label='Analysis End Date/Time 				  	'
+473        		, trtsdtm
+474        		, adurn	   label='AE Duration (N)  				  		  	'
+475        		, aduru    label='AE Duration Units  				  	  	'
+476        		, aesevn
+4 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+477        		, aesev
+478        		, asev	   label='Analysis Severity/Intensity				'
+479        		, aereln
+480        		, aerel
+481        		, arel     label='Analysis Causality 						'
+482        		, aeacn
+483        		, aeacnoth
+484        		, aeser
+485           from adae
+486           order by usubjid ;
+NOTE: Table ADSLIB.ADAE created, with 14 rows and 24 columns.
+
+487        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.21 seconds
+      cpu time            0.00 seconds
+      
+
+488        options noreplace;
+489        
+490        title "CHECK ANALYSIS DATA" ;
+491        proc print data=adslib.adae ;
+492        	where &printme ;
+493        run ;
+
+NOTE: There were 14 observations read from the data set ADSLIB.ADAE.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 2.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.00 seconds
+      
+
+494        title ;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           2.21 seconds
+      cpu time            0.24 seconds
+      

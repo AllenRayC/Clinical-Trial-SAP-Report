@@ -1,0 +1,38 @@
+CHECK SUPPLEMENTAL QUALIFIERS DM DATASET                                                  15:04 Monday, November 21, 2016   1
+
+Obs    STUDYID     RDOMAIN        USUBJID          QNAM        QLABEL            QVAL          QORIG
+
+  1    PROD-124      DM       PROD-124-044-101    RACEOTH    Race, Other                        CRF 
+  2    PROD-124      DM       PROD-124-044-102    RACEOTH    Race, Other                        CRF 
+  3    PROD-124      DM       PROD-124-044-103    RACEOTH    Race, Other                        CRF 
+  4    PROD-124      DM       PROD-124-044-104    RACEOTH    Race, Other                        CRF 
+  5    PROD-124      DM       PROD-124-044-105    RACEOTH    Race, Other                        CRF 
+  6    PROD-124      DM       PROD-124-044-106    RACEOTH    Race, Other                        CRF 
+  7    PROD-124      DM       PROD-124-044-107    RACEOTH    Race, Other                        CRF 
+  8    PROD-124      DM       PROD-124-044-108    RACEOTH    Race, Other                        CRF 
+  9    PROD-124      DM       PROD-124-044-109    RACEOTH    Race, Other                        CRF 
+ 10    PROD-124      DM       PROD-124-044-110    RACEOTH    Race, Other                        CRF 
+ 11    PROD-124      DM       PROD-124-044-111    RACEOTH    Race, Other                        CRF 
+ 12    PROD-124      DM       PROD-124-044-112    RACEOTH    Race, Other                        CRF 
+ 13    PROD-124      DM       PROD-124-044-113    RACEOTH    Race, Other                        CRF 
+ 14    PROD-124      DM       PROD-124-044-114    RACEOTH    Race, Other                        CRF 
+ 15    PROD-124      DM       PROD-124-044-115    RACEOTH    Race, Other                        CRF 
+ 16    PROD-124      DM       PROD-124-044-116    RACEOTH    Race, Other                        CRF 
+ 17    PROD-124      DM       PROD-124-044-117    RACEOTH    Race, Other                        CRF 
+ 18    PROD-124      DM       PROD-124-044-118    RACEOTH    Race, Other                        CRF 
+ 19    PROD-124      DM       PROD-124-044-119    RACEOTH    Race, Other                        CRF 
+ 20    PROD-124      DM       PROD-124-044-120    RACEOTH    Race, Other                        CRF 
+ 21    PROD-124      DM       PROD-124-044-121    RACEOTH    Race, Other                        CRF 
+ 22    PROD-124      DM       PROD-124-044-122    RACEOTH    Race, Other    NATIVE AMERICAN     CRF 
+ 23    PROD-124      DM       PROD-124-044-123    RACEOTH    Race, Other                        CRF 
+ 24    PROD-124      DM       PROD-124-044-124    RACEOTH    Race, Other                        CRF 
+ 25    PROD-124      DM       PROD-124-044-125    RACEOTH    Race, Other                        CRF 
+ 26    PROD-124      DM       PROD-124-044-126    RACEOTH    Race, Other                        CRF 
+ 27    PROD-124      DM       PROD-124-044-127    RACEOTH    Race, Other                        CRF 
+ 28    PROD-124      DM       PROD-124-044-128    RACEOTH    Race, Other                        CRF 
+ 29    PROD-124      DM       PROD-124-044-129    RACEOTH    Race, Other                        CRF 
+ 30    PROD-124      DM       PROD-124-044-130    RACEOTH    Race, Other                        CRF 
+ 31    PROD-124      DM       PROD-124-044-131    RACEOTH    Race, Other                        CRF 
+ 32    PROD-124      DM       PROD-124-044-132    RACEOTH    Race, Other                        CRF 
+ 33    PROD-124      DM       PROD-124-044-133    RACEOTH    Race, Other                        CRF 
+ 34    PROD-124      DM       PROD-124-044-134    RACEOTH    Race, Other                        CRF 

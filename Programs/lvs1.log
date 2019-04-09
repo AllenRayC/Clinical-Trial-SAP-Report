@@ -1,0 +1,333 @@
+1                                                          The SAS System                            14:39 Monday, November 21, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           0.78 seconds
+      cpu time            0.28 seconds
+      
+1          **-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    LVS1.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE VITAL SIGNS LISTING 8.1 - VITAL SIGNS (BLOOD PRESSURE AND HEART
+6        ! RATE)
+7          **												AND OXYGEN SATURATION
+8          **
+9          ** PROGRAMMER: A.CHANG
+10         **
+11         ** INPUT:      ADVS, ADSL DATA
+12         **
+13         ** OUTPUT:     LISTING 8.1
+14         **
+15         ** PROTOCOL:   PROD-124
+16         **
+17         ** MODIFIED:   DATE        BY          NOTE
+18         **             ----------  ----------
+18       ! -----------------------------------------------------
+19         **
+20         **-------------------------------------------------------------------------------------
+20       ! ------**;
+21         
+22         %include msetup ;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+      Engine:        V9 
+2                                         The SAS System           14:39 Monday, November 21, 2016
+
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+403        %let printme = 0 ;
+404        
+405        /*
+406        MARGINS?! SAP AND MOCKUP DO NOT MATCH
+407        	MARGINS USED : TOP 0.75in, BOT 0.75in, SIDES 1in
+408        
+409        SPANNING HEADERS?!
+410        
+411        */
+412        
+413        **-------------------------------------------------------------------------------**;
+414        **  BRING IN ADVS DATA                                             		         **;
+415        **-------------------------------------------------------------------------------**;
+416        
+417        data vs ;
+418        	set adslib.advs ;
+419        	if vstestcd in ('PULSE','SYSBP','DIABP','OXYSAT') ;
+420        run ;
+
+NOTE: There were 1913 observations read from the data set ADSLIB.ADVS.
+NOTE: The data set WORK.VS has 1728 observations and 33 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+421        
+422        **-------------------------------------------------------------------------------**;
+423        **  CREATE BASELINE ROW                                            		         **;
+424        **-------------------------------------------------------------------------------**;
+425        
+426        data vs ;
+427        	set vs ;
+428        	if vtpt='0 min' then output ;
+429        	output ;
+430        run ;
+
+NOTE: There were 1728 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 1852 observations and 33 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+431        
+432        proc sort data=vs ;
+3 The SAS System                                                                              14:39 Monday, November 21, 2016
+
+433        	by usubjid vsseq vstestcd ;
+434        run ;
+
+NOTE: There were 1852 observations read from the data set WORK.VS.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VS has 1852 observations and 33 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+435        
+436        data vs ;
+437        	set vs ;
+438        	by usubjid vsseq vstestcd ;
+439        	if vstpt = '0 min' and last.vstestcd then vtpt='Baseline^{super c}' ;
+440        run ;
+
+NOTE: There were 1852 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 1852 observations and 33 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+441        
+442        **-------------------------------------------------------------------------------**;
+443        **  FORMAT DATA FOR REPORT                                                       **;
+444        **-------------------------------------------------------------------------------**;
+445        
+446        **-- PREPARE DATA FOR TRANSPOSE --**;
+447        proc sort data=vs ;
+448        	by subjid armcd vsdtc vtpt ;
+449        run ;
+
+NOTE: There were 1852 observations read from the data set WORK.VS.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VS has 1852 observations and 33 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.00 seconds
+      
+
+450        
+451        data vs ;
+452        	set vs ;
+453        	flag = 1 ;
+454        	output ;
+455        	flag = 2 ;
+456        	output ;
+457        run ;
+
+NOTE: There were 1852 observations read from the data set WORK.VS.
+4 The SAS System                                                                              14:39 Monday, November 21, 2016
+
+NOTE: The data set WORK.VS has 3704 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+458        
+459        data vs ;
+460        	set vs ;
+461        		 if flag = 1 then avalc = vstresc ;
+462        	else if flag = 2 then avalc = vschgblc ;
+463        run ;
+
+NOTE: There were 3704 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 3704 observations and 35 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+464        
+465        **-- TRANSPOSE DATA --**;
+466        proc transpose data=vs out=vs (drop=_name_) ;
+467           by subjid armcd vsdtc vtpt ;
+468           var avalc ;
+469        run ;
+
+NOTE: There were 3704 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 463 observations and 12 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.00 seconds
+      
+
+470        
+471        data vs ;
+472        	set vs (rename=(col1=c4 col2=c5 col3=c6 col4=c7
+473        				    col5=c8 col6=c9 col7=c10 col8=c11));
+474        	length c1 - c3 $200 ;
+475        	c1 = subjid ;
+476        	c2 = armcd ;
+477        	c3 = vtpt ;
+478        
+479        	**-- EMPTY COLUMN FOR TABLE DISPLAY --**;
+480        	_empty = ' ' ;
+481        
+482        run ;
+
+NOTE: There were 463 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 463 observations and 16 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+5 The SAS System                                                                              14:39 Monday, November 21, 2016
+
+      
+
+483        
+484        title 'CHECK LISTING DATA' ;
+485        proc print data=vs ;
+486        	var c1 - c11 ;
+487        	where &printme ;
+488        run ;
+
+NOTE: No observations were selected from data set WORK.VS.
+NOTE: There were 0 observations read from the data set WORK.VS.
+      WHERE 0 /* an obviously FALSE WHERE clause */ ;
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+489        title ;
+490        
+491        **-------------------------------------------------------------------------------**;
+492        **  CREATE REPORT                                                                **;
+493        **-------------------------------------------------------------------------------**;
+494        
+495        **----- RTF SETUP -----**;
+496        options nodate nonumber orientation=landscape missing=' ';
+497        ods listing close ;
+498        ods escapechar='^' ;
+499        ods rtf style=TStyleRTF file="&opath.\L8-1.rtf" ;
+NOTE: Writing RTF Body file: E:\PROD124\Output\L8-1.rtf
+500        ** NOTE: MODIFIED OPTEMPLT.SAS **;
+501        
+502        **----- TITLES/FOOTNOTES -----**;
+503        title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+504        title2 j=left "Protocol PROD-124" j=right "&sysdate9"  ;
+505        title3 j=center "Listing 8.1" ;
+506        title4 ;
+507        title5 j=center "Vital Signs (Blood Pressure and Heart Rate) and Oxygen Saturation" ;
+508        
+509        footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+510        footnote2 h=10pt j=left "^{super a} Cohort 1 Sequence: Bag in Infusion 1 / Bottle in Infusion 2"
+The SAS System
+
+511        						", Cohort 2 Sequence: Bottle in Infusion 1 / Bag in Infusion 2." ;
+512        footnote3 h=10pt j=left "^{super b} Change from baseline." ;
+513        footnote4 h=10pt j=left "^{super c} Baseline is the last value prior to the start of PROD." ;
+514        footnote5 h=10pt j=left
+515        
+516        "^R'\ "
+517        " \line I or D = Increase or decrease from baseline of clinical importance based on the criteria specified below:
+517      ! \line "
+518        "       Systolic blood pressure above/below normal range (90 to 200 mm Hg) and increase/decrease >= 20 mm Hg \line "
+519        "       Diastolic blood pressure above/below normal range (60 to 120 mm Hg) and increase/decrease >= 10 mm Hg \line "
+520        "       Heart Rate above/below normal range (45 to 120 bpm) and increase/decrease >= 10 bpm \line "
+521        "       Oxygen Saturation <90% and decrease >= 5% \line";
+522        
+523        footnote6 j=left "^R'\ " "n/a = not applicable \line - = missing \line" ;
+524        footnote7 j=left "Data Source: ADVS, ADSL" j=right "Program: lvs1.sas" ;
+525        
+526        **----- REPORT DEFINITION -----**;
+527        proc report data=vs missing nowindows center split='|' ;
+528        	column c1-c3 ("^R'\brdrb\brdrs Systolic Blood \line Pressure (mmHg)" c4-c5) _empty
+529        		   ("^R'\brdrb\brdrs Diastolic Blood \line Pressure (mmHg)" c6-c7) _empty
+530        		   ("^R'\brdrb\brdrs Heart Rate \line (beats/min)" c8-c9) _empty
+531        		   ("^R'\brdrb\brdrs Oxygen Saturation \line (%)" c10-c11) ;
+532        
+533        	define _empty / display " " style(column)=[just=center cellwidth=0.1in] ;
+534        	define c1 / order "Subject" style(column)=[just=center cellwidth=0.9in] ;
+535        	define c2 / order "Cohort^{super a}" style(column)=[just=center cellwidth=0.9in] ;
+536        	define c3 /"Scheduled|Timepoint" style(header)=[just=left] style(column)=[just=left cellwidth=1in] ;
+537        	define c4 /"Value" style(column)=[just=center cellwidth=0.7in] ;
+538        	define c5 /"Change^{super b}" style(column)=[just=center cellwidth=0.7in] ;
+539        	define c6 /"Value" style(column)=[just=center cellwidth=0.7in] ;
+540        	define c7 /"Change^{super b}" style(column)=[just=center cellwidth=0.7in] ;
+541        	define c8 /"Value" style(column)=[just=center cellwidth=0.7in] ;
+542        	define c9 /"Change^{super b}" style(column)=[just=center cellwidth=0.7in] ;
+543        	define c10 /"Value" style(column)=[just=center cellwidth=0.7in] ;
+544        	define c11 /"Change^{super b}" style(column)=[just=center cellwidth=0.7in] ;
+545        
+546        	break after c1 / page ;
+547        
+548        	compute before c1 ;
+549        		line '' ;
+The SAS System
+
+550        	endcomp ;
+551        
+552        run;
+
+NOTE: Multiple concurrent threads will be used to summarize data.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.13 seconds
+      cpu time            0.14 seconds
+      
+NOTE: There were 463 observations read from the data set WORK.VS.
+
+553        
+554        run ;
+555        
+556        **----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+557        ods rtf close ;
+558        ods listing ;
+559        
+560        options date number ;
+561        title ;
+562        footnote ;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           1.94 seconds
+      cpu time            0.65 seconds
+      

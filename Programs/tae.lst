@@ -1,0 +1,105 @@
+CHECK DENOMINATORS                                                                        14:39 Monday, November 21, 2016   1
+
+Obs    TRT01PN    TRT01P      COUNT
+
+ 1        0       Total         31 
+ 2        1       Cohort 1      15 
+ 3        2       Cohort 2      16 
+CHECK DENOMINATORS                                                                        14:39 Monday, November 21, 2016   2
+
+Obs    TRT01PN    AEBODSYS                SEQ    AETEXT                  COUNT
+
+  1       0       AAAA                     1     Subjects with Advers      5  
+  2       0       GASTROINTESTINAL DIS     2     Gastrointestinal Dis      2  
+  3       0       GASTROINTESTINAL DIS     3     Nausea                    2  
+  4       0       GENERAL DISORDERS AN     2     General Disorders An      1  
+  5       0       GENERAL DISORDERS AN     3     Chest Pressure Sensa      1  
+  6       0       MUSCULOSKELETAL AND      2     Musculoskeletal And       1  
+  7       0       MUSCULOSKELETAL AND      3     Limb Discomfort Nos       1  
+  8       0       NERVOUS SYSTEM DISOR     2     Nervous System Disor      2  
+  9       0       NERVOUS SYSTEM DISOR     3     Headache Nos              1  
+ 10       0       NERVOUS SYSTEM DISOR     3     Paraesthesia              1  
+ 11       0       VASCULAR DISORDERS       2     Vascular Disorders        1  
+ 12       0       VASCULAR DISORDERS       3     Hypertension Aggrava      1  
+ 13       1       AAAA                     1     Subjects with Advers      2  
+ 14       1       GENERAL DISORDERS AN     2     General Disorders An      1  
+ 15       1       GENERAL DISORDERS AN     3     Chest Pressure Sensa      1  
+ 16       1       MUSCULOSKELETAL AND      2     Musculoskeletal And       1  
+ 17       1       MUSCULOSKELETAL AND      3     Limb Discomfort Nos       1  
+ 18       1       NERVOUS SYSTEM DISOR     2     Nervous System Disor      1  
+ 19       1       NERVOUS SYSTEM DISOR     3     Headache Nos              1  
+ 20       1       VASCULAR DISORDERS       2     Vascular Disorders        1  
+ 21       1       VASCULAR DISORDERS       3     Hypertension Aggrava      1  
+ 22       2       AAAA                     1     Subjects with Advers      3  
+ 23       2       GASTROINTESTINAL DIS     2     Gastrointestinal Dis      2  
+ 24       2       GASTROINTESTINAL DIS     3     Nausea                    2  
+ 25       2       NERVOUS SYSTEM DISOR     2     Nervous System Disor      1  
+ 26       2       NERVOUS SYSTEM DISOR     3     Paraesthesia              1  
+CHECK COMBINED STATS                                                                      14:39 Monday, November 21, 2016   3
+
+Obs    AEBODSYS                                                SEQ    AETEXT
+
+  1    AAAA                                                     1     Subjects with Adverse Event(s)^{super d}            
+  2    GASTROINTESTINAL DISORDERS                               2     Gastrointestinal Disorders                          
+  3    GASTROINTESTINAL DISORDERS                               3     ^R'\li360 'Nausea                                   
+  4    GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS     2     General Disorders And Administration Site Conditions
+  5    GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS     3     ^R'\li360 'Chest Pressure Sensation                 
+  6    MUSCULOSKELETAL AND CONNECTIVE TISSUE DISORDERS          2     Musculoskeletal And Connective Tissue Disorders     
+  7    MUSCULOSKELETAL AND CONNECTIVE TISSUE DISORDERS          3     ^R'\li360 'Limb Discomfort Nos                      
+  8    NERVOUS SYSTEM DISORDERS                                 2     Nervous System Disorders                            
+  9    NERVOUS SYSTEM DISORDERS                                 3     ^R'\li360 'Headache Nos                             
+ 10    NERVOUS SYSTEM DISORDERS                                 3     ^R'\li360 'Paraesthesia                             
+ 11    VASCULAR DISORDERS                                       2     Vascular Disorders                                  
+ 12    VASCULAR DISORDERS                                       3     ^R'\li360 'Hypertension Aggravated                  
+
+Obs    COL0       COL1       COL2
+
+  1    5          2          3       
+  2    2 (6.5)    0          2 (12.5)
+  3    2 (6.5)    0          2 (12.5)
+  4    1 (3.2)    1 (6.7)    0       
+  5    1 (3.2)    1 (6.7)    0       
+  6    1 (3.2)    1 (6.7)    0       
+  7    1 (3.2)    1 (6.7)    0       
+  8    2 (6.5)    1 (6.7)    1 (6.3) 
+  9    1 (3.2)    1 (6.7)    0       
+ 10    1 (3.2)    0          1 (6.3) 
+ 11    1 (3.2)    1 (6.7)    0       
+ 12    1 (3.2)    1 (6.7)    0       
+CHECK DENOMINATORS                                                                           14:39 Monday, November 21, 2016   4
+
+Obs    TRT01PN    TRT01P      COUNT
+
+ 1        0       Total         31 
+ 2        1       Cohort 1      15 
+ 3        2       Cohort 2      16 
+CHECK DENOMINATORS                                                                           14:39 Monday, November 21, 2016   5
+
+Obs    TRT01PN    AEBODSYS                SEQ    AETEXT                  COUNT
+
+  1       0       AAAA                     1     Subjects with Advers      1  
+  2       0       GENERAL DISORDERS AN     2     General Disorders An      1  
+  3       0       GENERAL DISORDERS AN     3     Chest Pressure Sensa      1  
+  4       0       MUSCULOSKELETAL AND      2     Musculoskeletal And       1  
+  5       0       MUSCULOSKELETAL AND      3     Limb Discomfort Nos       1  
+  6       1       AAAA                     1     Subjects with Advers      1  
+  7       1       GENERAL DISORDERS AN     2     General Disorders An      1  
+  8       1       GENERAL DISORDERS AN     3     Chest Pressure Sensa      1  
+  9       1       MUSCULOSKELETAL AND      2     Musculoskeletal And       1  
+ 10       1       MUSCULOSKELETAL AND      3     Limb Discomfort Nos       1  
+CHECK COMBINED STATS                                                                         14:39 Monday, November 21, 2016   6
+
+                           A
+                           E
+                           B                                                      A
+                           O                                                      E
+                           D                                                      T                              C       C    C
+O                          S                           S                          E                              O       O    O
+b                          Y                           E                          X                              L       L    L
+s                          S                           Q                          T                              0       1    2
+
+1 AAAA                                                 1 Subjects with Adverse Event(s)^{super d}             1       1       0
+2 GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS 2 General Disorders And Administration Site Conditions 1 (3.2) 1 (6.7) 0
+3 GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS 3 ^R'\li360 'Chest Pressure Sensation                  1 (3.2) 1 (6.7) 0
+4 MUSCULOSKELETAL AND CONNECTIVE TISSUE DISORDERS      2 Musculoskeletal And Connective Tissue Disorders      1 (3.2) 1 (6.7) 0
+5 MUSCULOSKELETAL AND CONNECTIVE TISSUE DISORDERS      3 ^R'\li360 'Limb Discomfort Nos                       1 (3.2) 1 (6.7) 0

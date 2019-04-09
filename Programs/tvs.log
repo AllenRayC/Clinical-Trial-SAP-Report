@@ -1,0 +1,2027 @@
+1                                                          The SAS System                            14:38 Monday, November 21, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           0.82 seconds
+      cpu time            0.20 seconds
+      
+1          **-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    TVS.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE TABLES 9.1 - VITAL SIGNS - SYSTOLIC BLOOD PRESSURE (MM HG)
+7          **							 9.2 - VITAL SIGNS - DIASTOLIC BLOOD PRESSURE (MM HG)
+8          **							 9.3 - VITAL SIGNS - HEART RATE (BEATS/MIN)
+9          **							 9.4 - VITAL SIGNS - OXYGEN SATURATION (%)
+10         **									
+11         ** PROGRAMMER: A.CHANG
+12         **
+13         ** INPUT:      ADVS, ADSL DATA
+14         **
+15         ** OUTPUT:     TABLES 9.1-9.4
+16         **
+17         ** PROTOCOL:   PROD-124
+18         **
+19         ** MODIFIED:   DATE        BY          NOTE
+20         **             ----------  ----------
+20       ! -----------------------------------------------------
+21         **
+22         **-------------------------------------------------------------------------------------
+22       ! ------**;
+23         
+24         %include msetup ;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+2                                         The SAS System           14:38 Monday, November 21, 2016
+
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+405        
+406        /*
+407        MARGINS?!?! ONE PAGE OR TWO?!?
+408        SAP AND TABLE MOCKUP DON'T MATCH
+409        
+410        Required margins: at least 1.5 inches on the binding margin and
+411        at least 1 inch on all other sides.  Required font: Times New Roman, 10pt.
+412        
+413        */
+414        
+415        %macro tvs (num=) ;
+416        	**-------------------------------------------------------------------------------**;
+417        	**  BRING IN ANALYSIS DATA                                                       **;
+418        	**-------------------------------------------------------------------------------**;
+419        	data vs ;
+420        		set adslib.advs ;
+421        
+422        		**-- SET PARCAT1N --**;
+423        			 if vtpt = 'Screening' then parcat1n = 1 ;
+424        		else if vtpt = '-5 min' then parcat1n = 2 ;
+425        		else if vtpt = '0 min' then parcat1n = 3 ;
+426        		else if vtpt = 'Baseline^{super b}' then parcat1n = 4 ;
+427        		else if vtpt = '+5 min' then parcat1n = 5 ;
+428        		else if vtpt = '+10 min' then parcat1n = 6 ;
+429        		else if vtpt = '+15 min' then parcat1n = 7 ;
+430        		else if vtpt = '+20 min' then parcat1n = 8 ;
+431        		else if vtpt = '+25 min' then parcat1n = 9 ;
+432        		else if vtpt = '+30 min' then parcat1n = 10 ;
+433        		else if vtpt = '+35 min' then parcat1n = 11 ;
+434        		else if vtpt = '+40 min' then parcat1n = 12 ;
+435        		else if vtpt = '+45 min' then parcat1n = 13 ;
+436        		else if vtpt = '+105 min' then parcat1n = 14 ;
+437        		else if vtpt = 'Study Day 2' then parcat1n = 15 ;
+438        
+439        		**-- SUBSET BASED ON TABLE NUMBER --**;
+440        			 if &num = 1 then if vstestcd in ('SYSBP') ;
+441        		else if &num = 2 then if vstestcd in ('DIABP') ;
+442        		else if &num = 3 then if vstestcd in ('PULSE') ;
+443        		else if &num = 4 then if vstestcd in ('OXYSAT') ;
+444        
+445        	run ;
+446        
+447        	**-------------------------------------------------------------------------------**;
+448        	**  REMOVE DATA OUTSIDE PLANNED TIMEPOINTS			                             **;
+449        	**-------------------------------------------------------------------------------**;
+3 The SAS System                                                                              14:38 Monday, November 21, 2016
+
+450        
+451        	** NOTE: REMOVED DATA WITH DATA OUTSIDE PLANNED TIMEPOINTS		**;
+452        	** 	     (PATID = 118 HAD EXTRA DATA AT 50 MIN,					**;
+453        	**		  PATID = 125 HAD EXTRA DATA AT 50 MIN, 55 MIN)			**;
+454        
+455        	data vs dropped ;
+456        		set vs ;
+457        		if vstpt in ('SCREENING & BASELINE','-5 min','0 min','5 min','10 min','15 min'
+458        					,'20 min','25 min','30 min','35 min','40 min','45 min'
+459        					,'1 HOUR AFTER INFUSION PERIOD #2','STUDY DAY 2') then output vs ;
+460        		else output dropped ;
+461        	run ;
+462        
+463        	**-------------------------------------------------------------------------------**;
+464        	**  BASELINE AND TABLE SHELL                           		         	         **;
+465        	**-------------------------------------------------------------------------------**;
+466        
+467        	data vsbl ;
+468        		set vs (where=(vsblfl='Y')) ;
+469        	run ;
+470        
+471        	**-- SUMMARY STATS FOR BASELINE --**;
+472        	proc sort data=vsbl (where=(vsstresn ne .))
+473        			  out=vsbl ;
+474        	   by trt01pn trt01p parcat1n vtpt ;
+475        	run ;
+476        
+477        	proc means data=vsbl noprint ;
+478        	   by trt01pn trt01p parcat1n vtpt ;
+479        	   var vsstresn ;
+480        	   output out=vsbl n=n mean=mean std=std median=median min=min max=max ;
+481        	run ;
+482        
+483        	**-- CREATE TABLE SHELL --**;
+484        	data shell ;
+485        		set vsbl (drop= _type_ _freq_) ;
+486        			
+487        		do i=1 to 16 by 1 ;
+488        				 if i in (1:4) then parcat1n = i ;
+489        			else if i = 5 then
+490        				do ;
+491        					parcat1n = 4.1 ;
+492        					n = . ;
+493        				end ;
+494        			else if i in (6:16) then parcat1n = i-1 ;
+495        
+496        				 if parcat1n = 1 then vtpt = 'Screening' ;
+497        			else if parcat1n = 2 then vtpt = '-5 min' ;
+498        			else if parcat1n = 3 then vtpt = '0 min' ;
+499        			else if parcat1n = 4 then vtpt = 'Baseline^{super b}' ;
+500        			else if parcat1n = 5 then vtpt = '+5 min' ;
+501        			else if parcat1n = 6 then vtpt = '+10 min' ;
+502        			else if parcat1n = 7 then vtpt = '+15 min' ;
+4 The SAS System                                                                              14:38 Monday, November 21, 2016
+
+503        			else if parcat1n = 8 then vtpt = '+20 min' ;
+504        			else if parcat1n = 9 then vtpt = '+25 min' ;
+505        			else if parcat1n = 10 then vtpt = '+30 min' ;
+506        			else if parcat1n = 11 then vtpt = '+35 min' ;
+507        			else if parcat1n = 12 then vtpt = '+40 min' ;
+508        			else if parcat1n = 13 then vtpt = '+45 min' ;
+509        			else if parcat1n = 14 then vtpt = '+105 min' ;
+510        			else if parcat1n = 15 then vtpt = 'Study Day 2' ;
+511        			else vtpt = '' ;
+512        
+513        			output ;
+514        		end ;
+515        	run ;
+516        
+517        	**-- BLANK LINE BETWEEN SCREENING & BASELINE AND SCHEDULED TIMEPOINTS --**;
+518        	data shell ;
+519        		set shell ;
+520        		if parcat1n = 4.1 then
+521        			do ;
+522        				mean=. ; std=. ; median=. ; min=. ; max=. ;
+523        			end ;
+524        	run ;
+525        
+526        	**-------------------------------------------------------------------------------**;
+527        	**  SCHEDULED TIMEPOINT                                 		         	     **;
+528        	**-------------------------------------------------------------------------------**;
+529        
+530        	data vsst ;
+531        		set vs (where= (parcat1n in (5:15))) ;
+532        	run ;
+533        
+534        	**-- SUMMARY STATS FOR SCHEDULED TIMEPOINT --**;
+535        	proc sort data=vsst (where=(vsstresn ne .))
+536        			  out=vsst ;
+537        	   by trt01pn trt01p parcat1n vtpt ;
+538        	run ;
+539        
+540        	proc means data=vsst noprint ;
+541        	   by trt01pn trt01p parcat1n vtpt ;
+542        	   var vsstresn ;
+543        	   output out=vsst n=n mean=mean std=std median=median min=min max=max ;
+544        	run ;
+545        
+546        	**-------------------------------------------------------------------------------**;
+547        	**  CHANGE FROM BASELINE                                 		         	     **;
+548        	**-------------------------------------------------------------------------------**;
+549        
+550        	data vschg ;
+551        		set vs (where= (parcat1n in (5:15))) ;
+552        	run ;
+553        
+554        	**-- SUMMARY STATS FOR CHANGE FROM BASELINE --**;
+555        	proc sort data=vschg (where=(vschgbl ne .))
+5 The SAS System                                                                              14:38 Monday, November 21, 2016
+
+556        			  out=vschg ;
+557        	   by trt01pn trt01p parcat1n vtpt ;
+558        	run ;
+559        
+560        	proc means data=vschg noprint ;
+561        	   by trt01pn trt01p parcat1n vtpt ;
+562        	   var vschgbl ;
+563        	   output out=vschg n=n mean=mean std=std median=median min=min max=max ;
+564        	run ;
+565        
+566        	**-------------------------------------------------------------------------------**;
+567        	**  MERGE TOGETHER	  	                                 		         	     **;
+568        	**-------------------------------------------------------------------------------**;
+569        
+570        	data summary ;
+571        		merge shell
+572        			  vsst (drop= _type_ _freq_ rename=(n=n1 mean=mean1 std=std1 median=median1 min=min1 max=max1))
+573        			  vschg (drop= _type_ _freq_ rename=(n=n2 mean=mean2 std=std2 median=median2 min=min2 max=max2)) ;
+574        		by trt01pn trt01p parcat1n vtpt ;
+575        
+576        		**-- COHORT AND SCHEDULED TIMEPOINT --**;
+577        		col1 = compress(put(trt01pn,8.)) ;
+578        		col2 = vtpt ;
+579        
+580        		**-- N --**;
+581        			 if parcat1n in (1:4) then n0 = n ;
+582        		else if parcat1n in (5:15) then n0 = n1 ;
+583        		col3 = compress(put(n0,2.)) ;
+584        
+585        		**-- BASELINE --**;
+586        		col4 = compress(put(mean,5.1)) ;
+587        		col5 = compress(put(std,5.1)) ;
+588        		col6 = compress(put(median,5.)) ;
+589        		if n(min,max)=2 then col7 = '(' || compress(put(min,8.)) || ', ' || compress(put(max,8.)) || ')' ;
+590        
+591        		**-- SCHEDULED TIMEPOINT --**;
+592        		col8 = compress(put(mean1,5.1)) ;
+593        		col9 = compress(put(std1,5.1)) ;
+594        		col10 = compress(put(median1,5.)) ;
+595        		if n(min1,max1)=2 then col11 = '(' || compress(put(min1,8.)) || ', ' || compress(put(max1,8.)) || ')' ;
+596        
+597        		**-- CHANGE FROM BASELINE --**;
+598        		col12 = compress(put(mean2,5.1)) ;
+599        		col13 = compress(put(std2,5.1)) ;
+600        		col14 = compress(put(median2,5.)) ;
+601        		if n(min2,max2)=2 then col15 = '(' || compress(put(min2,8.)) || ', ' || compress(put(max2,8.)) || ')' ;
+602        
+603        		**-- EMPTY COLUMN FOR TABLE DISPLAY --**;
+604        		_empty = ' ' ;
+605        
+606        	run ;
+607        
+608        	proc sort data = summary ;
+6 The SAS System                                                                              14:38 Monday, November 21, 2016
+
+609        		by trt01pn parcat1n ;
+610        	run ;
+611        
+612        	**-------------------------------------------------------------------------------**;
+613        	**  FORMAT DATA FOR REPORT                                                       **;
+614        	**-------------------------------------------------------------------------------**;
+615        
+616        	**-- ASSIGN TABLE TITLE MACRO --**;
+617        	data _null_ ;
+618        			 if &num = 1 then call symput('title','Vital Signs - Systolic Blood Pressure (mm Hg)') ;
+619        		else if &num = 2 then call symput('title','Vital Signs - Diastolic Blood Pressure (mm Hg)') ;
+620        		else if &num = 3 then call symput('title','Vital Signs - Heart Rate (beats/min)') ;
+621        		else if &num = 4 then call symput('title','Vital Signs - Oxygen Saturation (%)') ;
+622        	run ;
+623        
+624        	**-- ASSIGN SAFFL POPULATION COUNT MACRO --**;
+625        	proc freq data=adslib.adsl (where=(saffl='Y')) noprint ;
+626        	   tables studyid /out=popcnt (drop=percent) ;
+627        	run ;
+628        
+629        	data _null_ ;
+630        	   set popcnt ;
+631        	   call symput('popcnt',compress(put(count,8.))) ;
+632        	run ;
+633        
+634        	**-------------------------------------------------------------------------------**;
+635        	**  CREATE REPORT                                                                **;
+636        	**-------------------------------------------------------------------------------**;
+637        
+638        	**----- RTF SETUP -----**;
+639        	options nodate nonumber orientation=landscape missing=' ';
+640        	ods listing close ;
+641        	ods escapechar='^' ;
+642        	ods rtf style=TStyleRTF file="&opath.\T9-&num..rtf" ;
+643        
+644        	**----- TITLES/FOOTNOTES -----**;
+645        	title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+646        	title2 j=left "Protocol PROD-124" j=right "&sysdate9"  ;
+647        	title3 j=center "Table 9.&num" ;
+648        	title5 j=center "&title" ;
+649        	title7 j=left "Study Population: Safety (N = &popcnt)" ;
+650        
+651        	footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+652        	footnote2 h=10pt j=left "^{super a} Cohort 1 Sequence: Bag in Infusion 1 / Bottle in Infusion 2"
+653        						", Cohort 2 Sequence: Bottle in Infusion 1 / Bag in Infusion 2." ;
+654        	footnote3 h=10pt j=left "^{super b} Baseline is the last value prior to the start of PROD." ;
+655        	footnote4 h=10pt j=left "Note: Summary statistics at each scheduled timepoint include those subjects with a
+655      ! baseline value and a value at the scheduled timepoint. " ;
+656        	footnote6 j=left "Data Source: ADVS, ADSL" j=right "Program: tvs.sas" ;
+657        
+658        	**----- REPORT DEFINITION -----**;
+659        	proc report data=summary missing nowindows center split='|' style(report)=[outputwidth=9.0in] ;
+660        	   column col1-col3 ('^S={borderbottomcolor=black borderbottomwidth=2} Baseline^{super b}' col4-col7) _empty
+7 The SAS System                                                                              14:38 Monday, November 21, 2016
+
+661        			  ('^S={borderbottomcolor=black borderbottomwidth=2} Scheduled Timepoint' col8-col11 ) _empty
+662        			  ('^S={borderbottomcolor=black borderbottomwidth=2} Change from Baseline' col12-col15) ;
+663        
+664        	   define _empty / display " " style(column)=[just=center cellwidth=0.1in] ;
+665        	   define col1 / order "Cohort^{super a}" style(column)=[just=center cellwidth=0.4in] ;
+666        	   define col2 /"Scheduled|Timepoint" style(column)=[just=center cellwidth=0.6in] ;
+667        	   define col3 /"N" style(column)=[just=center cellwidth=0.4in] ;
+668        	   define col4 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+669        	   define col5 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+670        	   define col6 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+671        	   define col7 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+672        
+673        	   define col8 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+674        	   define col9 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+675        	   define col10 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+676        	   define col11 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+677        
+678        	   define col12 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+679        	   define col13 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+680        	   define col14 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+681        	   define col15 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+682        
+683        	   break after col1 / page ;
+684        
+685        		compute before col1 ;
+686        			line '' ;
+687        		endcomp ;
+688        
+689        	run ;
+690        
+691        	**----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+692        	ods rtf close ;
+693        	ods listing ;
+694        
+695        	options date number ;
+696        	title ;
+697        	footnote ;
+698        
+699        %mend tvs ;
+700        
+701        %tvs(num=1)
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** BRING IN ANALYSIS DATA **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vs ;
+MPRINT(TVS):   set adslib.advs ;
+MPRINT(TVS):   **-- SET PARCAT1N --**;
+MPRINT(TVS):   if vtpt = 'Screening' then parcat1n = 1 ;
+MPRINT(TVS):   else if vtpt = '-5 min' then parcat1n = 2 ;
+MPRINT(TVS):   else if vtpt = '0 min' then parcat1n = 3 ;
+MPRINT(TVS):   else if vtpt = 'Baseline^{super b}' then parcat1n = 4 ;
+MPRINT(TVS):   else if vtpt = '+5 min' then parcat1n = 5 ;
+MPRINT(TVS):   else if vtpt = '+10 min' then parcat1n = 6 ;
+8 The SAS System                                                                              14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   else if vtpt = '+15 min' then parcat1n = 7 ;
+MPRINT(TVS):   else if vtpt = '+20 min' then parcat1n = 8 ;
+MPRINT(TVS):   else if vtpt = '+25 min' then parcat1n = 9 ;
+MPRINT(TVS):   else if vtpt = '+30 min' then parcat1n = 10 ;
+MPRINT(TVS):   else if vtpt = '+35 min' then parcat1n = 11 ;
+MPRINT(TVS):   else if vtpt = '+40 min' then parcat1n = 12 ;
+MPRINT(TVS):   else if vtpt = '+45 min' then parcat1n = 13 ;
+MPRINT(TVS):   else if vtpt = '+105 min' then parcat1n = 14 ;
+MPRINT(TVS):   else if vtpt = 'Study Day 2' then parcat1n = 15 ;
+MPRINT(TVS):   **-- SUBSET BASED ON TABLE NUMBER --**;
+MPRINT(TVS):   if 1 = 1 then if vstestcd in ('SYSBP') ;
+MPRINT(TVS):   else if 1 = 2 then if vstestcd in ('DIABP') ;
+MPRINT(TVS):   else if 1 = 3 then if vstestcd in ('PULSE') ;
+MPRINT(TVS):   else if 1 = 4 then if vstestcd in ('OXYSAT') ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 1913 observations read from the data set ADSLIB.ADVS.
+NOTE: The data set WORK.VS has 432 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** REMOVE DATA OUTSIDE PLANNED TIMEPOINTS **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** NOTE: REMOVED DATA WITH DATA OUTSIDE PLANNED TIMEPOINTS **;
+MPRINT(TVS):   ** (PATID = 118 HAD EXTRA DATA AT 50 MIN, **;
+MPRINT(TVS):   ** PATID = 125 HAD EXTRA DATA AT 50 MIN, 55 MIN) **;
+MPRINT(TVS):   data vs dropped ;
+MPRINT(TVS):   set vs ;
+MPRINT(TVS):   if vstpt in ('SCREENING & BASELINE','-5 min','0 min','5 min','10 min','15 min' ,'20 min','25 min','30 
+min','35 min','40 min','45 min' ,'1 HOUR AFTER INFUSION PERIOD #2','STUDY DAY 2') then output vs ;
+MPRINT(TVS):   else output dropped ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 432 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 429 observations and 34 variables.
+NOTE: The data set WORK.DROPPED has 3 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** BASELINE AND TABLE SHELL **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vsbl ;
+MPRINT(TVS):   set vs (where=(vsblfl='Y')) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VS.
+      WHERE vsblfl='Y';
+9 The SAS System                                                                              14:38 Monday, November 21, 2016
+
+NOTE: The data set WORK.VSBL has 31 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR BASELINE --**;
+MPRINT(TVS):   proc sort data=vsbl (where=(vsstresn ne .)) out=vsbl ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VSBL.
+      WHERE vsstresn not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSBL has 31 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   proc means data=vsbl noprint ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vsstresn ;
+MPRINT(TVS):   output out=vsbl n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VSBL.
+NOTE: The data set WORK.VSBL has 2 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- CREATE TABLE SHELL --**;
+MPRINT(TVS):   data shell ;
+MPRINT(TVS):   set vsbl (drop= _type_ _freq_) ;
+MPRINT(TVS):   do i=1 to 16 by 1 ;
+MPRINT(TVS):   if i in (1:4) then parcat1n = i ;
+MPRINT(TVS):   else if i = 5 then do ;
+MPRINT(TVS):   parcat1n = 4.1 ;
+MPRINT(TVS):   n = . ;
+MPRINT(TVS):   end ;
+MPRINT(TVS):   else if i in (6:16) then parcat1n = i-1 ;
+MPRINT(TVS):   if parcat1n = 1 then vtpt = 'Screening' ;
+MPRINT(TVS):   else if parcat1n = 2 then vtpt = '-5 min' ;
+MPRINT(TVS):   else if parcat1n = 3 then vtpt = '0 min' ;
+MPRINT(TVS):   else if parcat1n = 4 then vtpt = 'Baseline^{super b}' ;
+MPRINT(TVS):   else if parcat1n = 5 then vtpt = '+5 min' ;
+MPRINT(TVS):   else if parcat1n = 6 then vtpt = '+10 min' ;
+MPRINT(TVS):   else if parcat1n = 7 then vtpt = '+15 min' ;
+MPRINT(TVS):   else if parcat1n = 8 then vtpt = '+20 min' ;
+MPRINT(TVS):   else if parcat1n = 9 then vtpt = '+25 min' ;
+MPRINT(TVS):   else if parcat1n = 10 then vtpt = '+30 min' ;
+10 The SAS System                                                                             14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   else if parcat1n = 11 then vtpt = '+35 min' ;
+MPRINT(TVS):   else if parcat1n = 12 then vtpt = '+40 min' ;
+MPRINT(TVS):   else if parcat1n = 13 then vtpt = '+45 min' ;
+MPRINT(TVS):   else if parcat1n = 14 then vtpt = '+105 min' ;
+MPRINT(TVS):   else if parcat1n = 15 then vtpt = 'Study Day 2' ;
+MPRINT(TVS):   else vtpt = '' ;
+MPRINT(TVS):   output ;
+MPRINT(TVS):   end ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 2 observations read from the data set WORK.VSBL.
+NOTE: The data set WORK.SHELL has 32 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- BLANK LINE BETWEEN SCREENING & BASELINE AND SCHEDULED TIMEPOINTS --**;
+MPRINT(TVS):   data shell ;
+MPRINT(TVS):   set shell ;
+MPRINT(TVS):   if parcat1n = 4.1 then do ;
+MPRINT(TVS):   mean=. ;
+MPRINT(TVS):   std=. ;
+MPRINT(TVS):   median=. ;
+MPRINT(TVS):   min=. ;
+MPRINT(TVS):   max=. ;
+MPRINT(TVS):   end ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 32 observations read from the data set WORK.SHELL.
+NOTE: The data set WORK.SHELL has 32 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** SCHEDULED TIMEPOINT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vsst ;
+MPRINT(TVS):   set vs (where= (parcat1n in (5:15))) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VS.
+      WHERE (parcat1n=INT(parcat1n)) and (parcat1n>=5 and parcat1n<=15);
+NOTE: The data set WORK.VSST has 336 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   proc sort data=vsst (where=(vsstresn ne .)) out=vsst ;
+11 The SAS System                                                                             14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSST.
+      WHERE vsstresn not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSST has 336 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   proc means data=vsst noprint ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vsstresn ;
+MPRINT(TVS):   output out=vsst n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSST.
+NOTE: The data set WORK.VSST has 22 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** CHANGE FROM BASELINE **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vschg ;
+MPRINT(TVS):   set vs (where= (parcat1n in (5:15))) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VS.
+      WHERE (parcat1n=INT(parcat1n)) and (parcat1n>=5 and parcat1n<=15);
+NOTE: The data set WORK.VSCHG has 336 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR CHANGE FROM BASELINE --**;
+MPRINT(TVS):   proc sort data=vschg (where=(vschgbl ne .)) out=vschg ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSCHG.
+      WHERE vschgbl not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSCHG has 336 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+12 The SAS System                                                                             14:38 Monday, November 21, 2016
+
+
+MPRINT(TVS):   proc means data=vschg noprint ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vschgbl ;
+MPRINT(TVS):   output out=vschg n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSCHG.
+NOTE: The data set WORK.VSCHG has 22 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** MERGE TOGETHER **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data summary ;
+MPRINT(TVS):   merge shell vsst (drop= _type_ _freq_ rename=(n=n1 mean=mean1 std=std1 median=median1 min=min1 max=max1)) 
+vschg (drop= _type_ _freq_ rename=(n=n2 mean=mean2 std=std2 median=median2 min=min2 max=max2)) ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   **-- COHORT AND SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   col1 = compress(put(trt01pn,8.)) ;
+MPRINT(TVS):   col2 = vtpt ;
+MPRINT(TVS):   **-- N --**;
+MPRINT(TVS):   if parcat1n in (1:4) then n0 = n ;
+MPRINT(TVS):   else if parcat1n in (5:15) then n0 = n1 ;
+MPRINT(TVS):   col3 = compress(put(n0,2.)) ;
+MPRINT(TVS):   **-- BASELINE --**;
+MPRINT(TVS):   col4 = compress(put(mean,5.1)) ;
+MPRINT(TVS):   col5 = compress(put(std,5.1)) ;
+MPRINT(TVS):   col6 = compress(put(median,5.)) ;
+MPRINT(TVS):   if n(min,max)=2 then col7 = '(' || compress(put(min,8.)) || ', ' || compress(put(max,8.)) || ')' ;
+MPRINT(TVS):   **-- SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   col8 = compress(put(mean1,5.1)) ;
+MPRINT(TVS):   col9 = compress(put(std1,5.1)) ;
+MPRINT(TVS):   col10 = compress(put(median1,5.)) ;
+MPRINT(TVS):   if n(min1,max1)=2 then col11 = '(' || compress(put(min1,8.)) || ', ' || compress(put(max1,8.)) || ')' ;
+MPRINT(TVS):   **-- CHANGE FROM BASELINE --**;
+MPRINT(TVS):   col12 = compress(put(mean2,5.1)) ;
+MPRINT(TVS):   col13 = compress(put(std2,5.1)) ;
+MPRINT(TVS):   col14 = compress(put(median2,5.)) ;
+MPRINT(TVS):   if n(min2,max2)=2 then col15 = '(' || compress(put(min2,8.)) || ', ' || compress(put(max2,8.)) || ')' ;
+MPRINT(TVS):   **-- EMPTY COLUMN FOR TABLE DISPLAY --**;
+MPRINT(TVS):   _empty = ' ' ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 32 observations read from the data set WORK.SHELL.
+NOTE: There were 22 observations read from the data set WORK.VSST.
+NOTE: There were 22 observations read from the data set WORK.VSCHG.
+NOTE: The data set WORK.SUMMARY has 32 observations and 40 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+13 The SAS System                                                                             14:38 Monday, November 21, 2016
+
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   proc sort data = summary ;
+MPRINT(TVS):   by trt01pn parcat1n ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 32 observations read from the data set WORK.SUMMARY.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.SUMMARY has 32 observations and 40 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** FORMAT DATA FOR REPORT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   **-- ASSIGN TABLE TITLE MACRO --**;
+MPRINT(TVS):   data _null_ ;
+MPRINT(TVS):   if 1 = 1 then call symput('title','Vital Signs - Systolic Blood Pressure (mm Hg)') ;
+MPRINT(TVS):   else if 1 = 2 then call symput('title','Vital Signs - Diastolic Blood Pressure (mm Hg)') ;
+MPRINT(TVS):   else if 1 = 3 then call symput('title','Vital Signs - Heart Rate (beats/min)') ;
+MPRINT(TVS):   else if 1 = 4 then call symput('title','Vital Signs - Oxygen Saturation (%)') ;
+MPRINT(TVS):   run ;
+
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- ASSIGN SAFFL POPULATION COUNT MACRO --**;
+MPRINT(TVS):   proc freq data=adslib.adsl (where=(saffl='Y')) noprint ;
+MPRINT(TVS):   tables studyid /out=popcnt (drop=percent) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set ADSLIB.ADSL.
+      WHERE saffl='Y';
+NOTE: The data set WORK.POPCNT has 1 observations and 2 variables.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   data _null_ ;
+MPRINT(TVS):   set popcnt ;
+MPRINT(TVS):   call symput('popcnt',compress(put(count,8.))) ;
+MPRINT(TVS):   run ;
+NOTE: There were 1 observations read from the data set WORK.POPCNT.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+14 The SAS System                                                                             14:38 Monday, November 21, 2016
+
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** CREATE REPORT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   **----- RTF SETUP -----**;
+MPRINT(TVS):   options nodate nonumber orientation=landscape missing=' ';
+MPRINT(TVS):   ods listing close ;
+MPRINT(TVS):   ods escapechar='^' ;
+MPRINT(TVS):   ods rtf style=TStyleRTF file="E:\PROD124\Output\T9-1.rtf" ;
+NOTE: Writing RTF Body file: E:\PROD124\Output\T9-1.rtf
+MPRINT(TVS):   **----- TITLES/FOOTNOTES -----**;
+MPRINT(TVS):   title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+MPRINT(TVS):   title2 j=left "Protocol PROD-124" j=right "21NOV2016" ;
+MPRINT(TVS):   title3 j=center "Table 9.1" ;
+MPRINT(TVS):   title5 j=center "Vital Signs - Systolic Blood Pressure (mm Hg)" ;
+MPRINT(TVS):   title7 j=left "Study Population: Safety (N = 31)" ;
+MPRINT(TVS):   footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+MPRINT(TVS):   footnote2 h=10pt j=left "^{super a} Cohort 1 Sequence: Bag in Infusion 1 / Bottle in Infusion 2" ", Cohort 2 
+Sequence: Bottle in Infusion 1 / Bag in Infusion 2." ;
+MPRINT(TVS):   footnote3 h=10pt j=left "^{super b} Baseline is the last value prior to the start of PROD." ;
+MPRINT(TVS):   footnote4 h=10pt j=left "Note: Summary statistics at each scheduled timepoint include those subjects with a 
+baseline value and a value at the scheduled timepoint. " ;
+MPRINT(TVS):   footnote6 j=left "Data Source: ADVS, ADSL" j=right "Program: tvs.sas" ;
+MPRINT(TVS):   **----- REPORT DEFINITION -----**;
+MPRINT(TVS):   proc report data=summary missing nowindows center split='|' style(report)=[outputwidth=9.0in] ;
+MPRINT(TVS):   column col1-col3 ('^S={borderbottomcolor=black borderbottomwidth=2} Baseline^{super b}' col4-col7) _empty 
+('^S={borderbottomcolor=black borderbottomwidth=2} Scheduled Timepoint' col8-col11 ) _empty ('^S={borderbottomcolor=black 
+borderbottomwidth=2} Change from Baseline' col12-col15) ;
+MPRINT(TVS):   define _empty / display " " style(column)=[just=center cellwidth=0.1in] ;
+MPRINT(TVS):   define col1 / order "Cohort^{super a}" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col2 /"Scheduled|Timepoint" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   define col3 /"N" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col4 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col5 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col6 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col7 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   define col8 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col9 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col10 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col11 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+The SAS System
+
+MPRINT(TVS):   define col12 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col13 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col14 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col15 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   break after col1 / page ;
+MPRINT(TVS):   compute before col1 ;
+MPRINT(TVS):   line '' ;
+MPRINT(TVS):   endcomp ;
+MPRINT(TVS):   run ;
+NOTE: Multiple concurrent threads will be used to summarize data.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+NOTE: There were 32 observations read from the data set WORK.SUMMARY.
+
+MPRINT(TVS):   **----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+MPRINT(TVS):   ods rtf close ;
+MPRINT(TVS):   ods listing ;
+MPRINT(TVS):   options date number ;
+MPRINT(TVS):   title ;
+MPRINT(TVS):   footnote ;
+702        %tvs(num=2)
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** BRING IN ANALYSIS DATA **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vs ;
+MPRINT(TVS):   set adslib.advs ;
+MPRINT(TVS):   **-- SET PARCAT1N --**;
+MPRINT(TVS):   if vtpt = 'Screening' then parcat1n = 1 ;
+MPRINT(TVS):   else if vtpt = '-5 min' then parcat1n = 2 ;
+MPRINT(TVS):   else if vtpt = '0 min' then parcat1n = 3 ;
+MPRINT(TVS):   else if vtpt = 'Baseline^{super b}' then parcat1n = 4 ;
+MPRINT(TVS):   else if vtpt = '+5 min' then parcat1n = 5 ;
+MPRINT(TVS):   else if vtpt = '+10 min' then parcat1n = 6 ;
+MPRINT(TVS):   else if vtpt = '+15 min' then parcat1n = 7 ;
+MPRINT(TVS):   else if vtpt = '+20 min' then parcat1n = 8 ;
+MPRINT(TVS):   else if vtpt = '+25 min' then parcat1n = 9 ;
+MPRINT(TVS):   else if vtpt = '+30 min' then parcat1n = 10 ;
+MPRINT(TVS):   else if vtpt = '+35 min' then parcat1n = 11 ;
+16 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   else if vtpt = '+40 min' then parcat1n = 12 ;
+MPRINT(TVS):   else if vtpt = '+45 min' then parcat1n = 13 ;
+MPRINT(TVS):   else if vtpt = '+105 min' then parcat1n = 14 ;
+MPRINT(TVS):   else if vtpt = 'Study Day 2' then parcat1n = 15 ;
+MPRINT(TVS):   **-- SUBSET BASED ON TABLE NUMBER --**;
+MPRINT(TVS):   if 2 = 1 then if vstestcd in ('SYSBP') ;
+MPRINT(TVS):   else if 2 = 2 then if vstestcd in ('DIABP') ;
+MPRINT(TVS):   else if 2 = 3 then if vstestcd in ('PULSE') ;
+MPRINT(TVS):   else if 2 = 4 then if vstestcd in ('OXYSAT') ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 1913 observations read from the data set ADSLIB.ADVS.
+NOTE: The data set WORK.VS has 432 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** REMOVE DATA OUTSIDE PLANNED TIMEPOINTS **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** NOTE: REMOVED DATA WITH DATA OUTSIDE PLANNED TIMEPOINTS **;
+MPRINT(TVS):   ** (PATID = 118 HAD EXTRA DATA AT 50 MIN, **;
+MPRINT(TVS):   ** PATID = 125 HAD EXTRA DATA AT 50 MIN, 55 MIN) **;
+MPRINT(TVS):   data vs dropped ;
+MPRINT(TVS):   set vs ;
+MPRINT(TVS):   if vstpt in ('SCREENING & BASELINE','-5 min','0 min','5 min','10 min','15 min' ,'20 min','25 min','30 min','35 
+min','40 min','45 min' ,'1 HOUR AFTER INFUSION PERIOD #2','STUDY DAY 2') then output vs ;
+MPRINT(TVS):   else output dropped ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 432 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 429 observations and 34 variables.
+NOTE: The data set WORK.DROPPED has 3 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+17 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   ** BASELINE AND TABLE SHELL **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vsbl ;
+MPRINT(TVS):   set vs (where=(vsblfl='Y')) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VS.
+      WHERE vsblfl='Y';
+NOTE: The data set WORK.VSBL has 31 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR BASELINE --**;
+MPRINT(TVS):   proc sort data=vsbl (where=(vsstresn ne .)) out=vsbl ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VSBL.
+      WHERE vsstresn not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSBL has 31 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   proc means data=vsbl noprint ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vsstresn ;
+MPRINT(TVS):   output out=vsbl n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VSBL.
+NOTE: The data set WORK.VSBL has 2 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+18 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+
+MPRINT(TVS):   **-- CREATE TABLE SHELL --**;
+MPRINT(TVS):   data shell ;
+MPRINT(TVS):   set vsbl (drop= _type_ _freq_) ;
+MPRINT(TVS):   do i=1 to 16 by 1 ;
+MPRINT(TVS):   if i in (1:4) then parcat1n = i ;
+MPRINT(TVS):   else if i = 5 then do ;
+MPRINT(TVS):   parcat1n = 4.1 ;
+MPRINT(TVS):   n = . ;
+MPRINT(TVS):   end ;
+MPRINT(TVS):   else if i in (6:16) then parcat1n = i-1 ;
+MPRINT(TVS):   if parcat1n = 1 then vtpt = 'Screening' ;
+MPRINT(TVS):   else if parcat1n = 2 then vtpt = '-5 min' ;
+MPRINT(TVS):   else if parcat1n = 3 then vtpt = '0 min' ;
+MPRINT(TVS):   else if parcat1n = 4 then vtpt = 'Baseline^{super b}' ;
+MPRINT(TVS):   else if parcat1n = 5 then vtpt = '+5 min' ;
+MPRINT(TVS):   else if parcat1n = 6 then vtpt = '+10 min' ;
+MPRINT(TVS):   else if parcat1n = 7 then vtpt = '+15 min' ;
+MPRINT(TVS):   else if parcat1n = 8 then vtpt = '+20 min' ;
+MPRINT(TVS):   else if parcat1n = 9 then vtpt = '+25 min' ;
+MPRINT(TVS):   else if parcat1n = 10 then vtpt = '+30 min' ;
+MPRINT(TVS):   else if parcat1n = 11 then vtpt = '+35 min' ;
+MPRINT(TVS):   else if parcat1n = 12 then vtpt = '+40 min' ;
+MPRINT(TVS):   else if parcat1n = 13 then vtpt = '+45 min' ;
+MPRINT(TVS):   else if parcat1n = 14 then vtpt = '+105 min' ;
+MPRINT(TVS):   else if parcat1n = 15 then vtpt = 'Study Day 2' ;
+MPRINT(TVS):   else vtpt = '' ;
+MPRINT(TVS):   output ;
+MPRINT(TVS):   end ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 2 observations read from the data set WORK.VSBL.
+NOTE: The data set WORK.SHELL has 32 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   **-- BLANK LINE BETWEEN SCREENING & BASELINE AND SCHEDULED TIMEPOINTS --**;
+MPRINT(TVS):   data shell ;
+19 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   set shell ;
+MPRINT(TVS):   if parcat1n = 4.1 then do ;
+MPRINT(TVS):   mean=. ;
+MPRINT(TVS):   std=. ;
+MPRINT(TVS):   median=. ;
+MPRINT(TVS):   min=. ;
+MPRINT(TVS):   max=. ;
+MPRINT(TVS):   end ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 32 observations read from the data set WORK.SHELL.
+NOTE: The data set WORK.SHELL has 32 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** SCHEDULED TIMEPOINT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vsst ;
+MPRINT(TVS):   set vs (where= (parcat1n in (5:15))) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VS.
+      WHERE (parcat1n=INT(parcat1n)) and (parcat1n>=5 and parcat1n<=15);
+NOTE: The data set WORK.VSST has 336 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   proc sort data=vsst (where=(vsstresn ne .)) out=vsst ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSST.
+      WHERE vsstresn not = .;
+NOTE: SAS sort was used.
+20 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+NOTE: The data set WORK.VSST has 336 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   proc means data=vsst noprint ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vsstresn ;
+MPRINT(TVS):   output out=vsst n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSST.
+NOTE: The data set WORK.VSST has 22 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** CHANGE FROM BASELINE **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vschg ;
+MPRINT(TVS):   set vs (where= (parcat1n in (5:15))) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VS.
+      WHERE (parcat1n=INT(parcat1n)) and (parcat1n>=5 and parcat1n<=15);
+NOTE: The data set WORK.VSCHG has 336 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR CHANGE FROM BASELINE --**;
+MPRINT(TVS):   proc sort data=vschg (where=(vschgbl ne .)) out=vschg ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSCHG.
+21 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+      WHERE vschgbl not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSCHG has 336 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   proc means data=vschg noprint ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vschgbl ;
+MPRINT(TVS):   output out=vschg n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSCHG.
+NOTE: The data set WORK.VSCHG has 22 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** MERGE TOGETHER **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data summary ;
+MPRINT(TVS):   merge shell vsst (drop= _type_ _freq_ rename=(n=n1 mean=mean1 std=std1 median=median1 min=min1 max=max1)) vschg 
+(drop= _type_ _freq_ rename=(n=n2 mean=mean2 std=std2 median=median2 min=min2 max=max2)) ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   **-- COHORT AND SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   col1 = compress(put(trt01pn,8.)) ;
+MPRINT(TVS):   col2 = vtpt ;
+MPRINT(TVS):   **-- N --**;
+MPRINT(TVS):   if parcat1n in (1:4) then n0 = n ;
+MPRINT(TVS):   else if parcat1n in (5:15) then n0 = n1 ;
+MPRINT(TVS):   col3 = compress(put(n0,2.)) ;
+MPRINT(TVS):   **-- BASELINE --**;
+MPRINT(TVS):   col4 = compress(put(mean,5.1)) ;
+MPRINT(TVS):   col5 = compress(put(std,5.1)) ;
+MPRINT(TVS):   col6 = compress(put(median,5.)) ;
+MPRINT(TVS):   if n(min,max)=2 then col7 = '(' || compress(put(min,8.)) || ', ' || compress(put(max,8.)) || ')' ;
+22 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   **-- SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   col8 = compress(put(mean1,5.1)) ;
+MPRINT(TVS):   col9 = compress(put(std1,5.1)) ;
+MPRINT(TVS):   col10 = compress(put(median1,5.)) ;
+MPRINT(TVS):   if n(min1,max1)=2 then col11 = '(' || compress(put(min1,8.)) || ', ' || compress(put(max1,8.)) || ')' ;
+MPRINT(TVS):   **-- CHANGE FROM BASELINE --**;
+MPRINT(TVS):   col12 = compress(put(mean2,5.1)) ;
+MPRINT(TVS):   col13 = compress(put(std2,5.1)) ;
+MPRINT(TVS):   col14 = compress(put(median2,5.)) ;
+MPRINT(TVS):   if n(min2,max2)=2 then col15 = '(' || compress(put(min2,8.)) || ', ' || compress(put(max2,8.)) || ')' ;
+MPRINT(TVS):   **-- EMPTY COLUMN FOR TABLE DISPLAY --**;
+MPRINT(TVS):   _empty = ' ' ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 32 observations read from the data set WORK.SHELL.
+NOTE: There were 22 observations read from the data set WORK.VSST.
+NOTE: There were 22 observations read from the data set WORK.VSCHG.
+NOTE: The data set WORK.SUMMARY has 32 observations and 40 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   proc sort data = summary ;
+MPRINT(TVS):   by trt01pn parcat1n ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 32 observations read from the data set WORK.SUMMARY.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.SUMMARY has 32 observations and 40 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** FORMAT DATA FOR REPORT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   **-- ASSIGN TABLE TITLE MACRO --**;
+MPRINT(TVS):   data _null_ ;
+23 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   if 2 = 1 then call symput('title','Vital Signs - Systolic Blood Pressure (mm Hg)') ;
+MPRINT(TVS):   else if 2 = 2 then call symput('title','Vital Signs - Diastolic Blood Pressure (mm Hg)') ;
+MPRINT(TVS):   else if 2 = 3 then call symput('title','Vital Signs - Heart Rate (beats/min)') ;
+MPRINT(TVS):   else if 2 = 4 then call symput('title','Vital Signs - Oxygen Saturation (%)') ;
+MPRINT(TVS):   run ;
+
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- ASSIGN SAFFL POPULATION COUNT MACRO --**;
+MPRINT(TVS):   proc freq data=adslib.adsl (where=(saffl='Y')) noprint ;
+MPRINT(TVS):   tables studyid /out=popcnt (drop=percent) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set ADSLIB.ADSL.
+      WHERE saffl='Y';
+NOTE: The data set WORK.POPCNT has 1 observations and 2 variables.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   data _null_ ;
+MPRINT(TVS):   set popcnt ;
+MPRINT(TVS):   call symput('popcnt',compress(put(count,8.))) ;
+MPRINT(TVS):   run ;
+NOTE: There were 1 observations read from the data set WORK.POPCNT.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** CREATE REPORT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   **----- RTF SETUP -----**;
+MPRINT(TVS):   options nodate nonumber orientation=landscape missing=' ';
+MPRINT(TVS):   ods listing close ;
+The SAS System
+
+MPRINT(TVS):   ods escapechar='^' ;
+MPRINT(TVS):   ods rtf style=TStyleRTF file="E:\PROD124\Output\T9-2.rtf" ;
+NOTE: Writing RTF Body file: E:\PROD124\Output\T9-2.rtf
+MPRINT(TVS):   **----- TITLES/FOOTNOTES -----**;
+MPRINT(TVS):   title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+MPRINT(TVS):   title2 j=left "Protocol PROD-124" j=right "21NOV2016" ;
+MPRINT(TVS):   title3 j=center "Table 9.2" ;
+MPRINT(TVS):   title5 j=center "Vital Signs - Diastolic Blood Pressure (mm Hg)" ;
+MPRINT(TVS):   title7 j=left "Study Population: Safety (N = 31)" ;
+MPRINT(TVS):   footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+MPRINT(TVS):   footnote2 h=10pt j=left "^{super a} Cohort 1 Sequence: Bag in Infusion 1 / Bottle in Infusion 2" ", Cohort 2 
+Sequence: Bottle in Infusion 1 / Bag in Infusion 2." ;
+MPRINT(TVS):   footnote3 h=10pt j=left "^{super b} Baseline is the last value prior to the start of PROD." ;
+MPRINT(TVS):   footnote4 h=10pt j=left "Note: Summary statistics at each scheduled timepoint include those subjects with a 
+baseline value and a value at the scheduled timepoint. " ;
+MPRINT(TVS):   footnote6 j=left "Data Source: ADVS, ADSL" j=right "Program: tvs.sas" ;
+MPRINT(TVS):   **----- REPORT DEFINITION -----**;
+MPRINT(TVS):   proc report data=summary missing nowindows center split='|' style(report)=[outputwidth=9.0in] ;
+MPRINT(TVS):   column col1-col3 ('^S={borderbottomcolor=black borderbottomwidth=2} Baseline^{super b}' col4-col7) _empty 
+('^S={borderbottomcolor=black borderbottomwidth=2} Scheduled Timepoint' col8-col11 ) _empty ('^S={borderbottomcolor=black 
+borderbottomwidth=2} Change from Baseline' col12-col15) ;
+MPRINT(TVS):   define _empty / display " " style(column)=[just=center cellwidth=0.1in] ;
+MPRINT(TVS):   define col1 / order "Cohort^{super a}" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col2 /"Scheduled|Timepoint" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   define col3 /"N" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col4 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col5 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col6 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col7 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   define col8 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col9 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col10 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col11 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   define col12 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col13 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col14 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col15 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   break after col1 / page ;
+MPRINT(TVS):   compute before col1 ;
+MPRINT(TVS):   line '' ;
+The SAS System
+
+MPRINT(TVS):   endcomp ;
+MPRINT(TVS):   run ;
+NOTE: Multiple concurrent threads will be used to summarize data.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+NOTE: There were 32 observations read from the data set WORK.SUMMARY.
+
+MPRINT(TVS):   **----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+MPRINT(TVS):   ods rtf close ;
+MPRINT(TVS):   ods listing ;
+MPRINT(TVS):   options date number ;
+MPRINT(TVS):   title ;
+MPRINT(TVS):   footnote ;
+703        %tvs(num=3)
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** BRING IN ANALYSIS DATA **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vs ;
+MPRINT(TVS):   set adslib.advs ;
+MPRINT(TVS):   **-- SET PARCAT1N --**;
+MPRINT(TVS):   if vtpt = 'Screening' then parcat1n = 1 ;
+MPRINT(TVS):   else if vtpt = '-5 min' then parcat1n = 2 ;
+MPRINT(TVS):   else if vtpt = '0 min' then parcat1n = 3 ;
+MPRINT(TVS):   else if vtpt = 'Baseline^{super b}' then parcat1n = 4 ;
+MPRINT(TVS):   else if vtpt = '+5 min' then parcat1n = 5 ;
+MPRINT(TVS):   else if vtpt = '+10 min' then parcat1n = 6 ;
+MPRINT(TVS):   else if vtpt = '+15 min' then parcat1n = 7 ;
+MPRINT(TVS):   else if vtpt = '+20 min' then parcat1n = 8 ;
+MPRINT(TVS):   else if vtpt = '+25 min' then parcat1n = 9 ;
+MPRINT(TVS):   else if vtpt = '+30 min' then parcat1n = 10 ;
+MPRINT(TVS):   else if vtpt = '+35 min' then parcat1n = 11 ;
+MPRINT(TVS):   else if vtpt = '+40 min' then parcat1n = 12 ;
+MPRINT(TVS):   else if vtpt = '+45 min' then parcat1n = 13 ;
+MPRINT(TVS):   else if vtpt = '+105 min' then parcat1n = 14 ;
+MPRINT(TVS):   else if vtpt = 'Study Day 2' then parcat1n = 15 ;
+MPRINT(TVS):   **-- SUBSET BASED ON TABLE NUMBER --**;
+MPRINT(TVS):   if 3 = 1 then if vstestcd in ('SYSBP') ;
+MPRINT(TVS):   else if 3 = 2 then if vstestcd in ('DIABP') ;
+26 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   else if 3 = 3 then if vstestcd in ('PULSE') ;
+MPRINT(TVS):   else if 3 = 4 then if vstestcd in ('OXYSAT') ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 1913 observations read from the data set ADSLIB.ADVS.
+NOTE: The data set WORK.VS has 432 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** REMOVE DATA OUTSIDE PLANNED TIMEPOINTS **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** NOTE: REMOVED DATA WITH DATA OUTSIDE PLANNED TIMEPOINTS **;
+MPRINT(TVS):   ** (PATID = 118 HAD EXTRA DATA AT 50 MIN, **;
+MPRINT(TVS):   ** PATID = 125 HAD EXTRA DATA AT 50 MIN, 55 MIN) **;
+MPRINT(TVS):   data vs dropped ;
+MPRINT(TVS):   set vs ;
+MPRINT(TVS):   if vstpt in ('SCREENING & BASELINE','-5 min','0 min','5 min','10 min','15 min' ,'20 min','25 min','30 min','35 
+min','40 min','45 min' ,'1 HOUR AFTER INFUSION PERIOD #2','STUDY DAY 2') then output vs ;
+MPRINT(TVS):   else output dropped ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 432 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 429 observations and 34 variables.
+NOTE: The data set WORK.DROPPED has 3 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** BASELINE AND TABLE SHELL **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vsbl ;
+MPRINT(TVS):   set vs (where=(vsblfl='Y')) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VS.
+27 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+      WHERE vsblfl='Y';
+NOTE: The data set WORK.VSBL has 31 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR BASELINE --**;
+MPRINT(TVS):   proc sort data=vsbl (where=(vsstresn ne .)) out=vsbl ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VSBL.
+      WHERE vsstresn not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSBL has 31 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   proc means data=vsbl noprint ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vsstresn ;
+MPRINT(TVS):   output out=vsbl n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VSBL.
+NOTE: The data set WORK.VSBL has 2 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   **-- CREATE TABLE SHELL --**;
+MPRINT(TVS):   data shell ;
+MPRINT(TVS):   set vsbl (drop= _type_ _freq_) ;
+MPRINT(TVS):   do i=1 to 16 by 1 ;
+MPRINT(TVS):   if i in (1:4) then parcat1n = i ;
+MPRINT(TVS):   else if i = 5 then do ;
+28 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   parcat1n = 4.1 ;
+MPRINT(TVS):   n = . ;
+MPRINT(TVS):   end ;
+MPRINT(TVS):   else if i in (6:16) then parcat1n = i-1 ;
+MPRINT(TVS):   if parcat1n = 1 then vtpt = 'Screening' ;
+MPRINT(TVS):   else if parcat1n = 2 then vtpt = '-5 min' ;
+MPRINT(TVS):   else if parcat1n = 3 then vtpt = '0 min' ;
+MPRINT(TVS):   else if parcat1n = 4 then vtpt = 'Baseline^{super b}' ;
+MPRINT(TVS):   else if parcat1n = 5 then vtpt = '+5 min' ;
+MPRINT(TVS):   else if parcat1n = 6 then vtpt = '+10 min' ;
+MPRINT(TVS):   else if parcat1n = 7 then vtpt = '+15 min' ;
+MPRINT(TVS):   else if parcat1n = 8 then vtpt = '+20 min' ;
+MPRINT(TVS):   else if parcat1n = 9 then vtpt = '+25 min' ;
+MPRINT(TVS):   else if parcat1n = 10 then vtpt = '+30 min' ;
+MPRINT(TVS):   else if parcat1n = 11 then vtpt = '+35 min' ;
+MPRINT(TVS):   else if parcat1n = 12 then vtpt = '+40 min' ;
+MPRINT(TVS):   else if parcat1n = 13 then vtpt = '+45 min' ;
+MPRINT(TVS):   else if parcat1n = 14 then vtpt = '+105 min' ;
+MPRINT(TVS):   else if parcat1n = 15 then vtpt = 'Study Day 2' ;
+MPRINT(TVS):   else vtpt = '' ;
+MPRINT(TVS):   output ;
+MPRINT(TVS):   end ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 2 observations read from the data set WORK.VSBL.
+NOTE: The data set WORK.SHELL has 32 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- BLANK LINE BETWEEN SCREENING & BASELINE AND SCHEDULED TIMEPOINTS --**;
+MPRINT(TVS):   data shell ;
+MPRINT(TVS):   set shell ;
+MPRINT(TVS):   if parcat1n = 4.1 then do ;
+MPRINT(TVS):   mean=. ;
+MPRINT(TVS):   std=. ;
+MPRINT(TVS):   median=. ;
+MPRINT(TVS):   min=. ;
+MPRINT(TVS):   max=. ;
+29 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   end ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 32 observations read from the data set WORK.SHELL.
+NOTE: The data set WORK.SHELL has 32 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** SCHEDULED TIMEPOINT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vsst ;
+MPRINT(TVS):   set vs (where= (parcat1n in (5:15))) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VS.
+      WHERE (parcat1n=INT(parcat1n)) and (parcat1n>=5 and parcat1n<=15);
+NOTE: The data set WORK.VSST has 336 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   proc sort data=vsst (where=(vsstresn ne .)) out=vsst ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSST.
+      WHERE vsstresn not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSST has 336 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   proc means data=vsst noprint ;
+30 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vsstresn ;
+MPRINT(TVS):   output out=vsst n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSST.
+NOTE: The data set WORK.VSST has 22 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** CHANGE FROM BASELINE **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vschg ;
+MPRINT(TVS):   set vs (where= (parcat1n in (5:15))) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VS.
+      WHERE (parcat1n=INT(parcat1n)) and (parcat1n>=5 and parcat1n<=15);
+NOTE: The data set WORK.VSCHG has 336 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR CHANGE FROM BASELINE --**;
+MPRINT(TVS):   proc sort data=vschg (where=(vschgbl ne .)) out=vschg ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSCHG.
+      WHERE vschgbl not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSCHG has 336 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+31 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+
+MPRINT(TVS):   proc means data=vschg noprint ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vschgbl ;
+MPRINT(TVS):   output out=vschg n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSCHG.
+NOTE: The data set WORK.VSCHG has 22 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** MERGE TOGETHER **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data summary ;
+MPRINT(TVS):   merge shell vsst (drop= _type_ _freq_ rename=(n=n1 mean=mean1 std=std1 median=median1 min=min1 max=max1)) vschg 
+(drop= _type_ _freq_ rename=(n=n2 mean=mean2 std=std2 median=median2 min=min2 max=max2)) ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   **-- COHORT AND SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   col1 = compress(put(trt01pn,8.)) ;
+MPRINT(TVS):   col2 = vtpt ;
+MPRINT(TVS):   **-- N --**;
+MPRINT(TVS):   if parcat1n in (1:4) then n0 = n ;
+MPRINT(TVS):   else if parcat1n in (5:15) then n0 = n1 ;
+MPRINT(TVS):   col3 = compress(put(n0,2.)) ;
+MPRINT(TVS):   **-- BASELINE --**;
+MPRINT(TVS):   col4 = compress(put(mean,5.1)) ;
+MPRINT(TVS):   col5 = compress(put(std,5.1)) ;
+MPRINT(TVS):   col6 = compress(put(median,5.)) ;
+MPRINT(TVS):   if n(min,max)=2 then col7 = '(' || compress(put(min,8.)) || ', ' || compress(put(max,8.)) || ')' ;
+MPRINT(TVS):   **-- SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   col8 = compress(put(mean1,5.1)) ;
+MPRINT(TVS):   col9 = compress(put(std1,5.1)) ;
+MPRINT(TVS):   col10 = compress(put(median1,5.)) ;
+MPRINT(TVS):   if n(min1,max1)=2 then col11 = '(' || compress(put(min1,8.)) || ', ' || compress(put(max1,8.)) || ')' ;
+MPRINT(TVS):   **-- CHANGE FROM BASELINE --**;
+MPRINT(TVS):   col12 = compress(put(mean2,5.1)) ;
+32 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   col13 = compress(put(std2,5.1)) ;
+MPRINT(TVS):   col14 = compress(put(median2,5.)) ;
+MPRINT(TVS):   if n(min2,max2)=2 then col15 = '(' || compress(put(min2,8.)) || ', ' || compress(put(max2,8.)) || ')' ;
+MPRINT(TVS):   **-- EMPTY COLUMN FOR TABLE DISPLAY --**;
+MPRINT(TVS):   _empty = ' ' ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 32 observations read from the data set WORK.SHELL.
+NOTE: There were 22 observations read from the data set WORK.VSST.
+NOTE: There were 22 observations read from the data set WORK.VSCHG.
+NOTE: The data set WORK.SUMMARY has 32 observations and 40 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   proc sort data = summary ;
+MPRINT(TVS):   by trt01pn parcat1n ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 32 observations read from the data set WORK.SUMMARY.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.SUMMARY has 32 observations and 40 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** FORMAT DATA FOR REPORT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   **-- ASSIGN TABLE TITLE MACRO --**;
+MPRINT(TVS):   data _null_ ;
+MPRINT(TVS):   if 3 = 1 then call symput('title','Vital Signs - Systolic Blood Pressure (mm Hg)') ;
+MPRINT(TVS):   else if 3 = 2 then call symput('title','Vital Signs - Diastolic Blood Pressure (mm Hg)') ;
+MPRINT(TVS):   else if 3 = 3 then call symput('title','Vital Signs - Heart Rate (beats/min)') ;
+MPRINT(TVS):   else if 3 = 4 then call symput('title','Vital Signs - Oxygen Saturation (%)') ;
+MPRINT(TVS):   run ;
+
+NOTE: DATA statement used (Total process time):
+33 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- ASSIGN SAFFL POPULATION COUNT MACRO --**;
+MPRINT(TVS):   proc freq data=adslib.adsl (where=(saffl='Y')) noprint ;
+MPRINT(TVS):   tables studyid /out=popcnt (drop=percent) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set ADSLIB.ADSL.
+      WHERE saffl='Y';
+NOTE: The data set WORK.POPCNT has 1 observations and 2 variables.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   data _null_ ;
+MPRINT(TVS):   set popcnt ;
+MPRINT(TVS):   call symput('popcnt',compress(put(count,8.))) ;
+MPRINT(TVS):   run ;
+NOTE: There were 1 observations read from the data set WORK.POPCNT.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** CREATE REPORT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   **----- RTF SETUP -----**;
+MPRINT(TVS):   options nodate nonumber orientation=landscape missing=' ';
+MPRINT(TVS):   ods listing close ;
+MPRINT(TVS):   ods escapechar='^' ;
+MPRINT(TVS):   ods rtf style=TStyleRTF file="E:\PROD124\Output\T9-3.rtf" ;
+NOTE: Writing RTF Body file: E:\PROD124\Output\T9-3.rtf
+MPRINT(TVS):   **----- TITLES/FOOTNOTES -----**;
+MPRINT(TVS):   title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+MPRINT(TVS):   title2 j=left "Protocol PROD-124" j=right "21NOV2016" ;
+MPRINT(TVS):   title3 j=center "Table 9.3" ;
+The SAS System
+
+MPRINT(TVS):   title5 j=center "Vital Signs - Heart Rate (beats/min)" ;
+MPRINT(TVS):   title7 j=left "Study Population: Safety (N = 31)" ;
+MPRINT(TVS):   footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+MPRINT(TVS):   footnote2 h=10pt j=left "^{super a} Cohort 1 Sequence: Bag in Infusion 1 / Bottle in Infusion 2" ", Cohort 2 
+Sequence: Bottle in Infusion 1 / Bag in Infusion 2." ;
+MPRINT(TVS):   footnote3 h=10pt j=left "^{super b} Baseline is the last value prior to the start of PROD." ;
+MPRINT(TVS):   footnote4 h=10pt j=left "Note: Summary statistics at each scheduled timepoint include those subjects with a 
+baseline value and a value at the scheduled timepoint. " ;
+MPRINT(TVS):   footnote6 j=left "Data Source: ADVS, ADSL" j=right "Program: tvs.sas" ;
+MPRINT(TVS):   **----- REPORT DEFINITION -----**;
+MPRINT(TVS):   proc report data=summary missing nowindows center split='|' style(report)=[outputwidth=9.0in] ;
+MPRINT(TVS):   column col1-col3 ('^S={borderbottomcolor=black borderbottomwidth=2} Baseline^{super b}' col4-col7) _empty 
+('^S={borderbottomcolor=black borderbottomwidth=2} Scheduled Timepoint' col8-col11 ) _empty ('^S={borderbottomcolor=black 
+borderbottomwidth=2} Change from Baseline' col12-col15) ;
+MPRINT(TVS):   define _empty / display " " style(column)=[just=center cellwidth=0.1in] ;
+MPRINT(TVS):   define col1 / order "Cohort^{super a}" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col2 /"Scheduled|Timepoint" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   define col3 /"N" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col4 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col5 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col6 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col7 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   define col8 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col9 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col10 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col11 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   define col12 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col13 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col14 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col15 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   break after col1 / page ;
+MPRINT(TVS):   compute before col1 ;
+MPRINT(TVS):   line '' ;
+MPRINT(TVS):   endcomp ;
+MPRINT(TVS):   run ;
+NOTE: Multiple concurrent threads will be used to summarize data.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+The SAS System
+
+NOTE: There were 32 observations read from the data set WORK.SUMMARY.
+
+MPRINT(TVS):   **----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+MPRINT(TVS):   ods rtf close ;
+MPRINT(TVS):   ods listing ;
+MPRINT(TVS):   options date number ;
+MPRINT(TVS):   title ;
+MPRINT(TVS):   footnote ;
+704        %tvs(num=4)
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** BRING IN ANALYSIS DATA **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vs ;
+MPRINT(TVS):   set adslib.advs ;
+MPRINT(TVS):   **-- SET PARCAT1N --**;
+MPRINT(TVS):   if vtpt = 'Screening' then parcat1n = 1 ;
+MPRINT(TVS):   else if vtpt = '-5 min' then parcat1n = 2 ;
+MPRINT(TVS):   else if vtpt = '0 min' then parcat1n = 3 ;
+MPRINT(TVS):   else if vtpt = 'Baseline^{super b}' then parcat1n = 4 ;
+MPRINT(TVS):   else if vtpt = '+5 min' then parcat1n = 5 ;
+MPRINT(TVS):   else if vtpt = '+10 min' then parcat1n = 6 ;
+MPRINT(TVS):   else if vtpt = '+15 min' then parcat1n = 7 ;
+MPRINT(TVS):   else if vtpt = '+20 min' then parcat1n = 8 ;
+MPRINT(TVS):   else if vtpt = '+25 min' then parcat1n = 9 ;
+MPRINT(TVS):   else if vtpt = '+30 min' then parcat1n = 10 ;
+MPRINT(TVS):   else if vtpt = '+35 min' then parcat1n = 11 ;
+MPRINT(TVS):   else if vtpt = '+40 min' then parcat1n = 12 ;
+MPRINT(TVS):   else if vtpt = '+45 min' then parcat1n = 13 ;
+MPRINT(TVS):   else if vtpt = '+105 min' then parcat1n = 14 ;
+MPRINT(TVS):   else if vtpt = 'Study Day 2' then parcat1n = 15 ;
+MPRINT(TVS):   **-- SUBSET BASED ON TABLE NUMBER --**;
+MPRINT(TVS):   if 4 = 1 then if vstestcd in ('SYSBP') ;
+MPRINT(TVS):   else if 4 = 2 then if vstestcd in ('DIABP') ;
+MPRINT(TVS):   else if 4 = 3 then if vstestcd in ('PULSE') ;
+MPRINT(TVS):   else if 4 = 4 then if vstestcd in ('OXYSAT') ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 1913 observations read from the data set ADSLIB.ADVS.
+NOTE: The data set WORK.VS has 432 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+36 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** REMOVE DATA OUTSIDE PLANNED TIMEPOINTS **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** NOTE: REMOVED DATA WITH DATA OUTSIDE PLANNED TIMEPOINTS **;
+MPRINT(TVS):   ** (PATID = 118 HAD EXTRA DATA AT 50 MIN, **;
+MPRINT(TVS):   ** PATID = 125 HAD EXTRA DATA AT 50 MIN, 55 MIN) **;
+MPRINT(TVS):   data vs dropped ;
+MPRINT(TVS):   set vs ;
+MPRINT(TVS):   if vstpt in ('SCREENING & BASELINE','-5 min','0 min','5 min','10 min','15 min' ,'20 min','25 min','30 min','35 
+min','40 min','45 min' ,'1 HOUR AFTER INFUSION PERIOD #2','STUDY DAY 2') then output vs ;
+MPRINT(TVS):   else output dropped ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 432 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 429 observations and 34 variables.
+NOTE: The data set WORK.DROPPED has 3 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** BASELINE AND TABLE SHELL **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vsbl ;
+MPRINT(TVS):   set vs (where=(vsblfl='Y')) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VS.
+      WHERE vsblfl='Y';
+NOTE: The data set WORK.VSBL has 31 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+37 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR BASELINE --**;
+MPRINT(TVS):   proc sort data=vsbl (where=(vsstresn ne .)) out=vsbl ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VSBL.
+      WHERE vsstresn not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSBL has 31 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   proc means data=vsbl noprint ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vsstresn ;
+MPRINT(TVS):   output out=vsbl n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set WORK.VSBL.
+NOTE: The data set WORK.VSBL has 2 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- CREATE TABLE SHELL --**;
+MPRINT(TVS):   data shell ;
+MPRINT(TVS):   set vsbl (drop= _type_ _freq_) ;
+MPRINT(TVS):   do i=1 to 16 by 1 ;
+MPRINT(TVS):   if i in (1:4) then parcat1n = i ;
+MPRINT(TVS):   else if i = 5 then do ;
+MPRINT(TVS):   parcat1n = 4.1 ;
+MPRINT(TVS):   n = . ;
+MPRINT(TVS):   end ;
+MPRINT(TVS):   else if i in (6:16) then parcat1n = i-1 ;
+MPRINT(TVS):   if parcat1n = 1 then vtpt = 'Screening' ;
+MPRINT(TVS):   else if parcat1n = 2 then vtpt = '-5 min' ;
+MPRINT(TVS):   else if parcat1n = 3 then vtpt = '0 min' ;
+38 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   else if parcat1n = 4 then vtpt = 'Baseline^{super b}' ;
+MPRINT(TVS):   else if parcat1n = 5 then vtpt = '+5 min' ;
+MPRINT(TVS):   else if parcat1n = 6 then vtpt = '+10 min' ;
+MPRINT(TVS):   else if parcat1n = 7 then vtpt = '+15 min' ;
+MPRINT(TVS):   else if parcat1n = 8 then vtpt = '+20 min' ;
+MPRINT(TVS):   else if parcat1n = 9 then vtpt = '+25 min' ;
+MPRINT(TVS):   else if parcat1n = 10 then vtpt = '+30 min' ;
+MPRINT(TVS):   else if parcat1n = 11 then vtpt = '+35 min' ;
+MPRINT(TVS):   else if parcat1n = 12 then vtpt = '+40 min' ;
+MPRINT(TVS):   else if parcat1n = 13 then vtpt = '+45 min' ;
+MPRINT(TVS):   else if parcat1n = 14 then vtpt = '+105 min' ;
+MPRINT(TVS):   else if parcat1n = 15 then vtpt = 'Study Day 2' ;
+MPRINT(TVS):   else vtpt = '' ;
+MPRINT(TVS):   output ;
+MPRINT(TVS):   end ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 2 observations read from the data set WORK.VSBL.
+NOTE: The data set WORK.SHELL has 32 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- BLANK LINE BETWEEN SCREENING & BASELINE AND SCHEDULED TIMEPOINTS --**;
+MPRINT(TVS):   data shell ;
+MPRINT(TVS):   set shell ;
+MPRINT(TVS):   if parcat1n = 4.1 then do ;
+MPRINT(TVS):   mean=. ;
+MPRINT(TVS):   std=. ;
+MPRINT(TVS):   median=. ;
+MPRINT(TVS):   min=. ;
+MPRINT(TVS):   max=. ;
+MPRINT(TVS):   end ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 32 observations read from the data set WORK.SHELL.
+NOTE: The data set WORK.SHELL has 32 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+39 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** SCHEDULED TIMEPOINT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vsst ;
+MPRINT(TVS):   set vs (where= (parcat1n in (5:15))) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VS.
+      WHERE (parcat1n=INT(parcat1n)) and (parcat1n>=5 and parcat1n<=15);
+NOTE: The data set WORK.VSST has 336 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   proc sort data=vsst (where=(vsstresn ne .)) out=vsst ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSST.
+      WHERE vsstresn not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSST has 336 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   proc means data=vsst noprint ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vsstresn ;
+MPRINT(TVS):   output out=vsst n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSST.
+NOTE: The data set WORK.VSST has 22 observations and 12 variables.
+40 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** CHANGE FROM BASELINE **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data vschg ;
+MPRINT(TVS):   set vs (where= (parcat1n in (5:15))) ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VS.
+      WHERE (parcat1n=INT(parcat1n)) and (parcat1n>=5 and parcat1n<=15);
+NOTE: The data set WORK.VSCHG has 336 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- SUMMARY STATS FOR CHANGE FROM BASELINE --**;
+MPRINT(TVS):   proc sort data=vschg (where=(vschgbl ne .)) out=vschg ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 336 observations read from the data set WORK.VSCHG.
+      WHERE vschgbl not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSCHG has 336 observations and 34 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   proc means data=vschg noprint ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   var vschgbl ;
+MPRINT(TVS):   output out=vschg n=n mean=mean std=std median=median min=min max=max ;
+MPRINT(TVS):   run ;
+
+41 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+NOTE: There were 336 observations read from the data set WORK.VSCHG.
+NOTE: The data set WORK.VSCHG has 22 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** MERGE TOGETHER **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   data summary ;
+MPRINT(TVS):   merge shell vsst (drop= _type_ _freq_ rename=(n=n1 mean=mean1 std=std1 median=median1 min=min1 max=max1)) vschg 
+(drop= _type_ _freq_ rename=(n=n2 mean=mean2 std=std2 median=median2 min=min2 max=max2)) ;
+MPRINT(TVS):   by trt01pn trt01p parcat1n vtpt ;
+MPRINT(TVS):   **-- COHORT AND SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   col1 = compress(put(trt01pn,8.)) ;
+MPRINT(TVS):   col2 = vtpt ;
+MPRINT(TVS):   **-- N --**;
+MPRINT(TVS):   if parcat1n in (1:4) then n0 = n ;
+MPRINT(TVS):   else if parcat1n in (5:15) then n0 = n1 ;
+MPRINT(TVS):   col3 = compress(put(n0,2.)) ;
+MPRINT(TVS):   **-- BASELINE --**;
+MPRINT(TVS):   col4 = compress(put(mean,5.1)) ;
+MPRINT(TVS):   col5 = compress(put(std,5.1)) ;
+MPRINT(TVS):   col6 = compress(put(median,5.)) ;
+MPRINT(TVS):   if n(min,max)=2 then col7 = '(' || compress(put(min,8.)) || ', ' || compress(put(max,8.)) || ')' ;
+MPRINT(TVS):   **-- SCHEDULED TIMEPOINT --**;
+MPRINT(TVS):   col8 = compress(put(mean1,5.1)) ;
+MPRINT(TVS):   col9 = compress(put(std1,5.1)) ;
+MPRINT(TVS):   col10 = compress(put(median1,5.)) ;
+MPRINT(TVS):   if n(min1,max1)=2 then col11 = '(' || compress(put(min1,8.)) || ', ' || compress(put(max1,8.)) || ')' ;
+MPRINT(TVS):   **-- CHANGE FROM BASELINE --**;
+MPRINT(TVS):   col12 = compress(put(mean2,5.1)) ;
+MPRINT(TVS):   col13 = compress(put(std2,5.1)) ;
+MPRINT(TVS):   col14 = compress(put(median2,5.)) ;
+MPRINT(TVS):   if n(min2,max2)=2 then col15 = '(' || compress(put(min2,8.)) || ', ' || compress(put(max2,8.)) || ')' ;
+MPRINT(TVS):   **-- EMPTY COLUMN FOR TABLE DISPLAY --**;
+MPRINT(TVS):   _empty = ' ' ;
+MPRINT(TVS):   run ;
+
+42 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+NOTE: There were 32 observations read from the data set WORK.SHELL.
+NOTE: There were 22 observations read from the data set WORK.VSST.
+NOTE: There were 22 observations read from the data set WORK.VSCHG.
+NOTE: The data set WORK.SUMMARY has 32 observations and 40 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   proc sort data = summary ;
+MPRINT(TVS):   by trt01pn parcat1n ;
+MPRINT(TVS):   run ;
+
+NOTE: There were 32 observations read from the data set WORK.SUMMARY.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.SUMMARY has 32 observations and 40 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** FORMAT DATA FOR REPORT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   **-- ASSIGN TABLE TITLE MACRO --**;
+MPRINT(TVS):   data _null_ ;
+MPRINT(TVS):   if 4 = 1 then call symput('title','Vital Signs - Systolic Blood Pressure (mm Hg)') ;
+MPRINT(TVS):   else if 4 = 2 then call symput('title','Vital Signs - Diastolic Blood Pressure (mm Hg)') ;
+MPRINT(TVS):   else if 4 = 3 then call symput('title','Vital Signs - Heart Rate (beats/min)') ;
+MPRINT(TVS):   else if 4 = 4 then call symput('title','Vital Signs - Oxygen Saturation (%)') ;
+MPRINT(TVS):   run ;
+
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-- ASSIGN SAFFL POPULATION COUNT MACRO --**;
+MPRINT(TVS):   proc freq data=adslib.adsl (where=(saffl='Y')) noprint ;
+MPRINT(TVS):   tables studyid /out=popcnt (drop=percent) ;
+43 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   run ;
+
+NOTE: There were 31 observations read from the data set ADSLIB.ADSL.
+      WHERE saffl='Y';
+NOTE: The data set WORK.POPCNT has 1 observations and 2 variables.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+MPRINT(TVS):   data _null_ ;
+MPRINT(TVS):   set popcnt ;
+MPRINT(TVS):   call symput('popcnt',compress(put(count,8.))) ;
+MPRINT(TVS):   run ;
+NOTE: There were 1 observations read from the data set WORK.POPCNT.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   ** CREATE REPORT **;
+MPRINT(TVS):   **-------------------------------------------------------------------------------**;
+MPRINT(TVS):   **----- RTF SETUP -----**;
+MPRINT(TVS):   options nodate nonumber orientation=landscape missing=' ';
+MPRINT(TVS):   ods listing close ;
+MPRINT(TVS):   ods escapechar='^' ;
+MPRINT(TVS):   ods rtf style=TStyleRTF file="E:\PROD124\Output\T9-4.rtf" ;
+NOTE: Writing RTF Body file: E:\PROD124\Output\T9-4.rtf
+MPRINT(TVS):   **----- TITLES/FOOTNOTES -----**;
+MPRINT(TVS):   title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+MPRINT(TVS):   title2 j=left "Protocol PROD-124" j=right "21NOV2016" ;
+MPRINT(TVS):   title3 j=center "Table 9.4" ;
+MPRINT(TVS):   title5 j=center "Vital Signs - Oxygen Saturation (%)" ;
+MPRINT(TVS):   title7 j=left "Study Population: Safety (N = 31)" ;
+MPRINT(TVS):   footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+MPRINT(TVS):   footnote2 h=10pt j=left "^{super a} Cohort 1 Sequence: Bag in Infusion 1 / Bottle in Infusion 2" ", Cohort 2 
+Sequence: Bottle in Infusion 1 / Bag in Infusion 2." ;
+MPRINT(TVS):   footnote3 h=10pt j=left "^{super b} Baseline is the last value prior to the start of PROD." ;
+MPRINT(TVS):   footnote4 h=10pt j=left "Note: Summary statistics at each scheduled timepoint include those subjects with a 
+The SAS System
+
+baseline value and a value at the scheduled timepoint. " ;
+MPRINT(TVS):   footnote6 j=left "Data Source: ADVS, ADSL" j=right "Program: tvs.sas" ;
+MPRINT(TVS):   **----- REPORT DEFINITION -----**;
+MPRINT(TVS):   proc report data=summary missing nowindows center split='|' style(report)=[outputwidth=9.0in] ;
+MPRINT(TVS):   column col1-col3 ('^S={borderbottomcolor=black borderbottomwidth=2} Baseline^{super b}' col4-col7) _empty 
+('^S={borderbottomcolor=black borderbottomwidth=2} Scheduled Timepoint' col8-col11 ) _empty ('^S={borderbottomcolor=black 
+borderbottomwidth=2} Change from Baseline' col12-col15) ;
+MPRINT(TVS):   define _empty / display " " style(column)=[just=center cellwidth=0.1in] ;
+MPRINT(TVS):   define col1 / order "Cohort^{super a}" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col2 /"Scheduled|Timepoint" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   define col3 /"N" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col4 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col5 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col6 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col7 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   define col8 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col9 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col10 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col11 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   define col12 /"Mean" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col13 /"SD" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col14 /"Median" style(column)=[just=center cellwidth=0.4in] ;
+MPRINT(TVS):   define col15 /"(Min, Max)" style(column)=[just=center cellwidth=0.6in] ;
+MPRINT(TVS):   break after col1 / page ;
+MPRINT(TVS):   compute before col1 ;
+MPRINT(TVS):   line '' ;
+MPRINT(TVS):   endcomp ;
+MPRINT(TVS):   run ;
+NOTE: Multiple concurrent threads will be used to summarize data.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+NOTE: There were 32 observations read from the data set WORK.SUMMARY.
+
+MPRINT(TVS):   **----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+MPRINT(TVS):   ods rtf close ;
+MPRINT(TVS):   ods listing ;
+MPRINT(TVS):   options date number ;
+MPRINT(TVS):   title ;
+45 The SAS System                                                                                14:38 Monday, November 21, 2016
+
+MPRINT(TVS):   footnote ;
+705        
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           4.37 seconds
+      cpu time            1.15 seconds
+      

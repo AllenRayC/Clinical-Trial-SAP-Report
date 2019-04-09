@@ -1,0 +1,231 @@
+1                                                          The SAS System                            15:04 Monday, November 21, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           1.74 seconds
+      cpu time            0.23 seconds
+      
+1          /*-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    D0AE.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE SDTM AE DATASET
+7          **
+8          ** PROGRAMMER: A.CHANG
+9          **
+10         ** INPUT:      RAWLIB.AE
+11         **
+12         ** OUTPUT:     SDTMLIB.AE
+13         **
+14         ** PROTOCOL:   PROD-124
+15         **
+16         ** MODIFIED:   DATE        BY         NOTE
+17         **             ---------- ---------- -----------------------------------------
+18         **
+19         **-------------------------------------------------------------------------------------
+19       ! ------**
+20         ** PROGRAMMED USING SAS VERSION 9.3
+20       !       **
+21         **-------------------------------------------------------------------------------------
+21       ! ------**/
+22         
+23         %include msetup ;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+2                                         The SAS System           15:04 Monday, November 21, 2016
+
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+404        %let printme = 1 ;
+405        
+406        **-------------------------------------------------------------------------------**;
+407        **  BRING IN ORIGINAL ADVERSE EVENTS DATA                                        **;
+408        **-------------------------------------------------------------------------------**;
+409        
+410        proc sort data=rawlib.ae
+411        		  out=ae ;
+412        	by patid seq ;
+413        	where aeterm ne '' ;
+414        run ;
+
+NOTE: There were 14 observations read from the data set RAWLIB.AE.
+      WHERE aeterm not = ' ';
+NOTE: SAS sort was used.
+NOTE: The data set WORK.AE has 14 observations and 24 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.00 seconds
+      
+
+415        
+416        ** NOTE: THERE IS A DATA ISSUE IN RAWLIB.AE WHERE AEANYCD=0 BUT THERE IS	**;
+417        ** 	     	AN AE RECORDED. DECIDED TO INCLUDE THIS OBS BY SUBSETTING		**;
+418        **			USING AETERM RATHER THAN AEANYCD. (PATID = 115)					**;
+419        
+420        data ae (keep= studyid domain &pat aeseq aeterm aedecod aebodsys aesevn aesev aereln aerel aestdtc aeendtc aeacn
+420      ! aeacnoth aeser) ;
+421        	attrib
+422        	    studyid  length = $8   label = 'Study Identifier                 	  '
+423        		domain	 length = $2   label = 'Domain Abbreviation				 	  '
+424        	    &pat  	 length = $16  label = 'Unique Subject Identifier        	  '
+425        		aeseq	 length = 3	   label = 'Sequence Number					   	  '
+426        		aeterm   length = $120 label = 'Reported Term for the Adverse Event	  '
+427        		aedecod  length = $100 label = 'Dictionary-Derived Term               '
+428        		aebodsys length = $100 label = 'Body System or Organ Class			  '
+429        		aesevn   length = 3	   label = 'Severity/Intensity (N) 				  '
+430        		aesev	 length = $20  label = 'Severity/Intensity	  				  '
+431        		aereln   length = 3    label = 'Causality (N) 						  '
+432        		aerel    length = $20  label = 'Causality			  				  '
+433        		aestdtc	 length = $30  label = 'Start Date/Time of Adverse Event	  '
+434        		aeendtc  length = $30  label = 'End Date/Time of Adverse Event		  '
+435        		aeacn    length = $20  label = 'Action Taken with Study Treatment     '
+436        		aeacnoth length = $20  label = 'Other Action Taken 					  '
+437        		aeser    length = $1   label = 'Serious Event						  '
+3 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+438        	    ;
+439        	set ae (rename=(seq=aeseq aesoc=aebodsys aesevcd=aesevn aerelcd=aereln) drop= pageno e_stat aeanycd);
+440        
+441        	**-- ASSIGN REQUIRED SDTM VARIABLES --**;
+442        	studyid = compress(proto) ;
+443        	domain = 'AE' ;
+444        	&pat = studyid || '-' || '0' || put(inv_no,2.) || '-' || put(patid,3.) ;
+445        
+446        	**-- MAP AESEV ACCORDING TO CRF --**;
+447        		 if aesevn = 1 then aesev = 'MILD' ;
+448        	else if aesevn = 2 then aesev = 'MODERATE' ;
+449        	else if aesevn = 3 then aesev = 'SEVERE' ;
+450        	else if aesevn = 4 then aesev = 'LIFE-THREATENING' ;
+451        	else put "WARN" "ING: UNEXPECTED AESEVCD " aesevn= ;
+452        
+453        	**-- MAP AEREL ACCORDING TO CRF --**;
+454        		 if aereln = 1 then aerel = 'UNRELATED' ;
+455        	else if aereln = 2 then aerel = 'POSSIBLY' ;
+456        	else if aereln = 3 then aerel = 'PROBABLY' ;
+457        	else if aereln = 4 then aerel = 'DEFINITELY' ;
+458        	else put "WARN" "ING: UNEXPECTED AERELCD " aereln= ;
+459        
+460        	**-- AESTDTC, AEENDTC IN ISO8601 --**;
+461        	aestdtc = put(aestdt,yymmdd10.) || 'T' || put(aesttm,tod5.2) ;
+462        	aeendtc = put(aeendt,yymmdd10.) || 'T' || put(aeentm,tod5.2) ;
+463        
+464        	**-- AEACN, AEACNOTH, AESER --**;
+465        	
+466        	if aetxcd = 1 then aeacnoth = 'Treatment' ;
+467        
+468        	if aeprencd = 2 and aeacnoth = '' then
+469        		do ;
+470        			aeacn = 'DRUG WITHDRAWN' ;
+471        			aeacnoth = 'PROD stopped' ;
+472        		end ;
+473        	else if aeprencd = 2 and aeacnoth ne '' then
+474        		do ;
+475        			aeacn = 'DRUG WITHDRAWN' ;
+476        			aeacnoth = aeacnoth || ', ' || 'PROD stopped' ;
+477        		end ;
+478        
+479        		 if aedccd = 3 and aeacnoth = '' then aeacnoth = 'Discontinued trial' ;
+480        	else if aedccd = 3 and aeacnoth ne '' then aeacnoth = aeacnoth || ', ' || 'Discontinued trial' ;
+481        
+482        		 if aesercd = . then aeser = 'N' ;
+483        	else if aesercd = 4 and aeacnoth = '' then
+484        		do ;
+485        			aeacnoth = 'SAE Reported' ;
+486        			aeser = 'Y' ;
+487        		end ;
+488        	else if aesercd = 4 and aeacnoth ne '' then
+489        		do ;
+490        			aeacnoth = aeacnoth || ', ' || 'SAE Reported' ;
+4 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+491        			aeser = 'Y' ;
+492        		end ;
+493        
+494        	if aenoatcd = 0 then
+495        		do ;
+496        			if aeacnoth ne '' then put "WARN" "ING: CHECK ACTIONS TAKEN AE DATA." ;
+497        			aeacnoth = 'None' ;
+498        		end ;
+499        
+500        run ;
+
+NOTE: There were 14 observations read from the data set WORK.AE.
+NOTE: The data set WORK.AE has 14 observations and 16 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+501        
+502        **-------------------------------------------------------------------------------**;
+503        **  OUTPUT SDTM AE DATASET							                             **;
+504        **-------------------------------------------------------------------------------**;
+505        
+506        options replace ;
+507        
+508        proc sql ;
+509           create table sdtmlib.ae (label='Adverse Events') as
+510              select studyid, domain, &pat, aeseq, aeterm, aedecod, aebodsys, aesevn, aesev
+511        		   , aereln, aerel, aestdtc, aeendtc, aeacn, aeacnoth, aeser
+512              from ae
+513              order by &pat ;
+NOTE: Table SDTMLIB.AE created, with 14 rows and 16 columns.
+
+514        quit ;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.40 seconds
+      cpu time            0.00 seconds
+      
+
+515        
+516        options noreplace ;
+517        
+518        title "CHECK ADVERSE EVENTS SDTM DATASET" ;
+519        proc print data=sdtmlib.ae ;
+520        	where &printme ;
+521        run ;
+
+NOTE: There were 14 observations read from the data set SDTMLIB.AE.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 1.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           1.30 seconds
+      cpu time            0.01 seconds
+5 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+      
+
+522        title ;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           3.67 seconds
+      cpu time            0.28 seconds
+      

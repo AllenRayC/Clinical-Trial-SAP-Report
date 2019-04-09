@@ -1,0 +1,499 @@
+1                                                          The SAS System                            15:04 Monday, November 21, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           1.52 seconds
+      cpu time            0.21 seconds
+      
+1          **-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    D1ADSL.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE ANALYSIS DATASET ADSL
+7          **
+8          ** PROGRAMMER: A.CHANG
+9          **
+10         ** INPUT:      SDTM DATA
+11         **
+12         ** OUTPUT:     ADSLIB.ADSL
+13         **
+14         ** PROTOCOL:   PROD-124
+15         **
+16         ** MODIFIED:   DATE        BY          NOTE
+17         **             ----------  ----------
+17       ! -----------------------------------------------------
+18         **
+19         **-------------------------------------------------------------------------------------
+19       ! ------**;
+20         
+21         %include msetup;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+2                                         The SAS System           15:04 Monday, November 21, 2016
+
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+402        %let printme = 1 ;
+403        
+404        **-------------------------------------------------------------------------------**;
+405        **  BRING IN DM SDTM DATA                                                        **;
+406        **-------------------------------------------------------------------------------**;
+407        
+408        data adsl ;
+409        	merge sdtmlib.dm (in=indm)
+410        		  sdtmlib.suppdm ;
+411        	by usubjid studyid ;
+412        	if indm ;
+413        run ;
+
+NOTE: There were 34 observations read from the data set SDTMLIB.DM.
+NOTE: There were 34 observations read from the data set SDTMLIB.SUPPDM.
+NOTE: The data set WORK.ADSL has 34 observations and 20 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+414        
+415        **-------------------------------------------------------------------------------**;
+416        **  DERIVED VARIABLES FOR TABLE/LISTINGS DISPLAY                                 **;
+417        **-------------------------------------------------------------------------------**;
+418        
+419        data adsl ;
+420        	set adsl ;
+421        
+422        	length trt01p $20 ;
+423        		 if armcd eq '1' then trt01pn = 1 ;
+424        	else if armcd eq '2' then trt01pn = 2 ;
+425        		 if trt01pn eq 1 then trt01p = 'Cohort 1' ;
+426        	else if trt01pn eq 2 then trt01p = 'Cohort 2' ;
+427        		
+428        	length sexgr1 $6 ;
+429        	if sex eq 'M' then
+430        		do ;
+431        			sexgr1n = 1 ;
+432        			sexgr1 = 'Male' ;
+433        		end ;
+434        	else if sex eq 'F' then
+435        		do ;
+436        			sexgr1n = 2 ;
+437        			sexgr1 = 'Female' ;
+438        		end ;
+439        	else put "WARN" "ING: UNEXPECTED SEX " sex= ;
+440        
+3 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+441        	length racegr1 $30 ;
+442        	racegr1 = propcase(race) ;
+443        		 if race eq 'CAUCASIAN' then racegr1n = 1 ;
+444        	else if race eq 'BLACK' then racegr1n = 2 ;
+445        	else if race eq 'HISPANIC' then racegr1n = 3 ;
+446        	else if race eq 'ASIAN' then racegr1n = 4 ;
+447        	else if race eq 'OTHER' then
+448        		do ;
+449        			racegr1n = 5 ;
+450        			race = 'OTHER, ' || trim(qval) ;
+451        		end ;
+452        	else put "WARN" "ING: UNEXPECTED RACE " race= ;
+453        
+454        run ;
+
+NOTE: There were 34 observations read from the data set WORK.ADSL.
+NOTE: The data set WORK.ADSL has 34 observations and 26 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+455        
+456        **-------------------------------------------------------------------------------**;
+457        **  BRING IN TRTSDT AND TRTEDT													 **;
+458        **-------------------------------------------------------------------------------**;
+459        
+460        proc sort data=rawlib.vital
+461        		  out=vs (keep= inv_no patid proto vsdt);
+462        	by patid vsdt ;
+463        run ;
+
+NOTE: There were 62 observations read from the data set RAWLIB.VITAL.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VS has 62 observations and 4 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+464        
+465        data vs (keep= usubjid vsdt) ;
+466        	set vs ;
+467        	by patid vsdt ;
+468        	length &pat $16 ;
+469        	&pat = compress(proto) || '-' || '0' || put(inv_no,2.) || '-' || put(patid,3.) ;
+470        	if first.patid ;
+471        run ;
+
+NOTE: There were 62 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 31 observations and 2 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+4 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+      cpu time            0.01 seconds
+      
+
+472        
+473        data adsl ;
+474        	merge adsl (in=insl)
+475        		  vs (rename=(vsdt=trtsdt));
+476        	by usubjid ;
+477        	trtedt = trtsdt ;
+478        	format trtsdt trtedt date9. ;
+479        	if insl ;
+480        run ;
+
+NOTE: There were 34 observations read from the data set WORK.ADSL.
+NOTE: There were 31 observations read from the data set WORK.VS.
+NOTE: The data set WORK.ADSL has 34 observations and 28 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+481        
+482        **-------------------------------------------------------------------------------**;
+483        **  BRING IN PROD ADMINISTRATION TIME					  						 **;
+484        **-------------------------------------------------------------------------------**;
+485        
+486        proc sort data=sdtmlib.vs (where=(vstpt = '0 min')) nodupkey
+487        		  out=vs (keep= usubjid vsdtc) ;
+488        	by usubjid ;
+489        run ;
+
+NOTE: There were 124 observations read from the data set SDTMLIB.VS.
+      WHERE vstpt='0 min';
+NOTE: SAS sort was used.
+NOTE: 93 observations with duplicate key values were deleted.
+NOTE: The data set WORK.VS has 31 observations and 2 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+490        
+491        data adsl ;
+492        	merge adsl (in=insl)
+493        		  vs (rename=(vsdtc=trtsdtmc));
+494        	by usubjid ;
+495        
+496        	if trtsdtmc ne '' then
+497        		trtsdtm = dhms(input(scan(trtsdtmc,1,'T'),YYMMDD10.)
+498        					, input(scan(scan(trtsdtmc,2,'T'),1,':'),2.)
+499        					, input(scan(scan(trtsdtmc,2,'T'),2,':'),2.)
+500        					, 0) ;
+501        	else trtsdtm = . ;
+5 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+502        
+503        	format trtsdtm datetime16. ;
+504        	if insl ;
+505        run ;
+
+NOTE: There were 34 observations read from the data set WORK.ADSL.
+NOTE: There were 31 observations read from the data set WORK.VS.
+NOTE: The data set WORK.ADSL has 34 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+506        
+507        **-------------------------------------------------------------------------------**;
+508        **  BRING IN BASELINE WEIGHT AND HEIGHT (ONLY COLLECTED ONCE)					 **;
+509        **-------------------------------------------------------------------------------**;
+510        
+511        data weight ;
+512           set sdtmlib.vs (where=(vstestcd='WEIGHT' and vsblfl='Y')) ;
+513        run ;
+
+NOTE: There were 31 observations read from the data set SDTMLIB.VS.
+      WHERE (vstestcd='WEIGHT') and (vsblfl='Y');
+NOTE: The data set WORK.WEIGHT has 31 observations and 16 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+514        
+515        data height ;
+516           set sdtmlib.vs (where=(vstestcd='HEIGHT' and vsblfl='Y')) ;
+517        run ;
+
+NOTE: There were 31 observations read from the data set SDTMLIB.VS.
+      WHERE (vstestcd='HEIGHT') and (vsblfl='Y');
+NOTE: The data set WORK.HEIGHT has 31 observations and 16 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+518        
+519        data adsl ;
+520           merge adsl (in=insl)
+521        		 weight (keep=usubjid vsstresn rename=(vsstresn=weight))
+522        		 height (keep=usubjid vsstresn rename=(vsstresn=height)) ;
+523           by usubjid ;
+524           if insl ;
+525        run ;
+
+NOTE: There were 34 observations read from the data set WORK.ADSL.
+6 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+NOTE: There were 31 observations read from the data set WORK.WEIGHT.
+NOTE: There were 31 observations read from the data set WORK.HEIGHT.
+NOTE: The data set WORK.ADSL has 34 observations and 32 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+526        
+527        **-------------------------------------------------------------------------------**;
+528        **  CREATE SAFETY POPULATION FLAG						                         **;
+529        **-------------------------------------------------------------------------------**;
+530        
+531        data ex ;
+532        	set rawlib.exposure (where=(proddose ne .)) ;
+533        	length &pat $16 ;
+534        	&pat = compress(proto) || '-' || '0' || put(inv_no,2.) || '-' || put(patid,3.) ;
+535        run ;
+
+NOTE: There were 62 observations read from the data set RAWLIB.EXPOSURE.
+      WHERE proddose not = .;
+NOTE: The data set WORK.EX has 62 observations and 13 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+536        
+537        proc sort data=ex nodupkey ;
+538        	by usubjid ;
+539        run ;
+
+NOTE: There were 62 observations read from the data set WORK.EX.
+NOTE: SAS sort was used.
+NOTE: 31 observations with duplicate key values were deleted.
+NOTE: The data set WORK.EX has 31 observations and 13 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+540        
+541        title 'CHECK EX DATA' ;
+542        proc print data=ex ;
+543        	var usubjid proddose ;
+544        	where &printme ;
+545        run ;
+
+NOTE: There were 31 observations read from the data set WORK.EX.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 1.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.05 seconds
+7 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+      cpu time            0.01 seconds
+      
+
+546        title ;
+547        
+548        data adsl (drop= proddose) ;
+549        	merge adsl (in=insl)
+550        	      ex (keep=usubjid proddose) ;
+551        	by usubjid ;
+552        	if proddose ne . then saffl = 'Y' ;
+553        	else saffl = 'N' ;
+554        	if insl ;
+555        run ;
+
+NOTE: There were 34 observations read from the data set WORK.ADSL.
+NOTE: There were 31 observations read from the data set WORK.EX.
+NOTE: The data set WORK.ADSL has 34 observations and 33 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+556        
+557        **-------------------------------------------------------------------------------**;
+558        **  EVALUABLE POPULATION                                                         **;
+559        **-------------------------------------------------------------------------------**;
+560        
+561        ** NOTE: POPULATION	THAT DID NOT HAVE ANY OF THE BELOW PROTOCOL DEVIATIONS	**;
+562        ** 	     	reascd=1 : Entrance Criteria not met  							**;
+563        ** 	     	reascd=2 : PROD not administered fully							**;
+564        ** 	     	reascd=3 : Images not obtained									**;
+565        ** NOTE: USED FASFL (FULL ANALYSIS SET POPULATION FLAG) PER ADAMIG v1.1		**;
+566        
+567        data ts ;
+568        	set rawlib.summary (where=(reascd not in (1,2,3))) ;
+569        	length &pat $16 ;
+570        	&pat = compress(proto) || '-' || '0' || put(inv_no,2.) || '-' || put(patid,3.) ;
+571        run ;
+
+NOTE: There were 31 observations read from the data set RAWLIB.SUMMARY.
+      WHERE reascd not in (1, 2, 3);
+NOTE: The data set WORK.TS has 31 observations and 17 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+572        
+573        proc sort data=ts nodupkey ;
+574        	by usubjid ;
+575        run ;
+
+NOTE: There were 31 observations read from the data set WORK.TS.
+8 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+NOTE: SAS sort was used.
+NOTE: 0 observations with duplicate key values were deleted.
+NOTE: The data set WORK.TS has 31 observations and 17 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+576        
+577        data adsl ;
+578        	merge adsl (in=insl)
+579        	      ts (in=ints keep= usubjid) ;
+580        	by usubjid ;
+581        	if ints then fasfl = 'Y' ;
+582        	else fasfl = 'N' ;
+583        	if insl ;
+584        run ;
+
+NOTE: There were 34 observations read from the data set WORK.ADSL.
+NOTE: There were 31 observations read from the data set WORK.TS.
+NOTE: The data set WORK.ADSL has 34 observations and 34 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+585        
+586        title 'CHECK FASFL' ;
+587        proc print data=adsl ;
+588        	var usubjid fasfl ;
+589        	where &printme ;
+590        run ;
+
+NOTE: There were 34 observations read from the data set WORK.ADSL.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 2.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+591        title ;
+592        
+593        **-------------------------------------------------------------------------------**;
+594        **  OUTPUT FINAL DATA                                                            **;
+595        **-------------------------------------------------------------------------------**;
+596        
+597        options replace ;
+598        proc sql;
+599           create table adslib.adsl (label='Subject Level Analysis Dataset') as
+600           select studyid
+601              	, usubjid
+602           	    , subjid
+9 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+603        		, country
+604        		, siteid
+605        		, rfstdtc
+606        		, trtsdt   label='Date of First Exposure to Treatment     '
+607        	    , trtedt   label='Date of Last Exposure to Treatment	  '
+608         		, trtsdtm  label='Datetime of First Exposure to Treatment '
+609        		, brthdtc
+610                , age
+611                , ageu
+612                , sex
+613        		, sexgr1   label='Pooled Sex Group 1					  '
+614        		, sexgr1n  label='Pooled Sex Group 1 (N)				  '
+615                , race
+616        		, racegr1  label='Pooled Race Group 1					  '
+617        		, racegr1n label='Pooled Race Group 1 (N)				  '
+618        		, arm
+619        		, armcd
+620        		, trt01p   label='Planned Treatment for Period 01		  '
+621        		, trt01pn  label='Planned Treatment for Period 01 (N)	  '
+622                , weight   label='Baseline Weight (kg)                    '
+623                , height   label='Baseline Height (cm)                    '
+624        	    , saffl	   label='Safety Population Flag 				  '
+625        		, fasfl	   label='Full Analysis Set Population Flag		  '
+626           from adsl
+627           order by usubjid ;
+NOTE: Table ADSLIB.ADSL created, with 34 rows and 26 columns.
+
+628        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           1.68 seconds
+      cpu time            0.00 seconds
+      
+
+629        options noreplace;
+630        
+631        title "CHECK ANALYSIS DATA" ;
+632        proc print data=adslib.adsl ;
+633           where &printme ;
+634        run ;
+
+NOTE: There were 34 observations read from the data set ADSLIB.ADSL.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed pages 3-4.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+635        title ;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           3.94 seconds
+10 The SAS System                                                                             15:04 Monday, November 21, 2016
+
+      cpu time            0.37 seconds
+      

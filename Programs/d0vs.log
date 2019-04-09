@@ -1,0 +1,411 @@
+1                                                          The SAS System                            15:04 Monday, November 21, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           1.85 seconds
+      cpu time            0.17 seconds
+      
+1          /*-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    D0VS.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE SDTM VS DATASET
+7          **
+8          ** PROGRAMMER: A.CHANG
+9          **
+10         ** INPUT:      RAWLIB.VITAL, RAWLIB.VITALTPT
+11         **
+12         ** OUTPUT:     SDTMLIB.VS
+13         **
+14         ** PROTOCOL:   PROD-124
+15         **
+16         ** MODIFIED:   DATE        BY         NOTE
+17         **             ---------- ---------- -----------------------------------------
+18         **
+19         **-------------------------------------------------------------------------------------
+19       ! ------**
+20         ** PROGRAMMED USING SAS VERSION 9.3
+20       !       **
+21         **-------------------------------------------------------------------------------------
+21       ! ------**/
+22         
+23         %include msetup ;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+2                                         The SAS System           15:04 Monday, November 21, 2016
+
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+404        %let printme = 1 ;
+405        
+406        **-------------------------------------------------------------------------------**;
+407        **  BRING IN ORIGINAL VITAL SIGNS DATA                                           **;
+408        **-------------------------------------------------------------------------------**;
+409        
+410        data vs (drop= inv_no patid proto seq vstptm) ;
+411        	attrib
+412        		studyid  length = $8   label = 'Study Identifier                   			'
+413        		domain	 length = $2   label = 'Domain Abbreviation				   			'
+414        	    &pat  	 length = $16  label = 'Unique Subject Identifier        			'
+415        		visitnum length = 3	   label = 'Visit Number					   			'
+416        		visit 	 length = $12  label = 'Visit Name						   			'
+417        		vstpt 	 length = $40  label = 'Planned Time Point Name						'
+418        	    ;
+419        	set rawlib.vital (in=a drop= pageno e_stat weightun heightun)
+420        		rawlib.vitaltpt (in=b rename=(vstacttm=vsacttm) drop= pageno e_stat) ;
+421        
+422        	**-- ASSIGN REQUIRED SDTM VARIABLES --**;
+423        	studyid = proto ;
+424        	domain = 'VS' ;
+425        	&pat = studyid || '-' || '0' || put(inv_no,2.) || '-' || put(patid,3.) ;
+426        
+427        	**-- ASSIGN VSTPT, VISIT AND VISITNUM --**;
+428        	if a then
+429        		do ;
+430        			if visit = 'STUDY DAY 1' then
+431        				do ;
+432        					vstpt = 'SCREENING & BASELINE' ;
+433        					visitnum = 1 ;
+434        				end ;
+435        			else if visit = 'STUDY DAY 2' then
+436        				do ;
+437        					vstpt = 'STUDY DAY 2' ;
+438        					visitnum = 2 ;
+439        				end ;
+440        		end ;
+441        	if b then
+442        		do ;
+443        			vstpt = vstptm ;
+444        			visitnum = 1 ;
+445        			visit = 'STUDY DAY 1' ;
+446        			tptfl = 'Y' ;
+447        		end ;
+448        run ;
+3 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+
+NOTE: There were 62 observations read from the data set RAWLIB.VITAL.
+NOTE: There were 401 observations read from the data set RAWLIB.VITALTPT.
+NOTE: The data set WORK.VS has 463 observations and 17 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.01 seconds
+      
+
+449        
+450        proc sort data=vs ;
+451        	by usubjid visitnum vsacttm ;
+452        run ;
+
+NOTE: There were 463 observations read from the data set WORK.VS.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VS has 463 observations and 17 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+453        
+454        data vs (drop= date tptfl vsacttm vsdt) ;
+455        	attrib		
+456        		vsdtc	 length = $30  label = 'Date/Time of Measurements		   			'
+457        	    ;
+458        	set vs ;
+459        
+460        	**-- ASSIGN STUDY DAY 1 DATE TO VITALTPT DATA --**;
+461        	retain date . ;
+462        	if vstpt = 'SCREENING & BASELINE' then date = vsdt ;
+463        	if tptfl = 'Y' then vsdt = date ;
+464        
+465        	**-- COMBINE VISIT DATE/TIME IN ISO 8601 FORMAT --**;
+466        	vsdtc = put(vsdt,yymmdd10.) || 'T' || put(vsacttm,tod5.2) ;
+467        run ;
+
+NOTE: There were 463 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 463 observations and 15 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+468        
+469        **-------------------------------------------------------------------------------**;
+470        **  RESTRUCTURE VITAL SIGNS DATA (ONE RECORD FOR EACH TEST RESULT)               **;
+471        **-------------------------------------------------------------------------------**;
+472        
+473        data vs (keep= studyid domain &pat visitnum visit vsdtc vsseq vstpt vstestcd vstest vsorres vsorresu vsstresc
+473      ! vsstresn vsstresu) ;
+474        	attrib
+4 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+475        		vsseq    length = 3    label = 'Sequence Number                    			'
+476        		vstestcd length = $8   label = 'Vital Signs Test Short Name		   			'
+477        	    vstest   length = $40  label = 'Vital Signs Test Name	           			'
+478        		vsorres  length = $20  label = 'Result or Finding in Original Units			'
+479        		vsorresu length = $20  label = 'Original Units	           		   			'
+480        		vsstresc length = $10  label = 'Character Result/Finding in Std Format	 	'
+481        		vsstresn length = 8    label = 'Numeric Result/Finding in Standard Units	'
+482        		vsstresu length = $20  label = 'Standard Units	           					'
+483        	    ;
+484        	set vs ;
+485        	by usubjid ;
+486        
+487        	if first.usubjid then vsseq = 0 ;
+488        
+489        	** OUTPUT FOR PULSE **;
+490        	vsseq + 1 ;
+491        	vstestcd = 'PULSE' ;
+492        	vstest = 'Pulse Rate' ;
+493        	vsorres = put(heart,3.) ;
+494        	vsorresu = 'BEATS/MIN' ;
+495        	vsstresc = put(heart,3.) ;
+496        	vsstresn = heart ;
+497        	vsstresu = 'BEATS/MIN' ;
+498        	if vsorres ne '' then output ;
+499        
+500        	** OUTPUT FOR SYSBP **;
+501        	vsseq + 1 ;
+502        	vstestcd = 'SYSBP' ;
+503        	vstest = 'Systolic Blood Pressure' ;
+504        	vsorres = put(sysbp,3.) ;
+505        	vsorresu = 'mmHG' ;
+506        	vsstresc = put(sysbp,3.) ;
+507        	vsstresn = sysbp ;
+508        	vsstresu = 'mmHG' ;
+509        	if vsorres ne '' then output ;
+510        
+511        	** OUTPUT FOR DIABP **;
+512        	vsseq + 1 ;
+513        	vstestcd = 'DIABP' ;
+514        	vstest = 'Diastolic Blood Pressure' ;
+515        	vsorres = put(diabp,3.) ;
+516        	vsorresu = 'mmHG' ;
+517        	vsstresc = put(diabp,3.) ;
+518        	vsstresn = diabp ;
+519        	vsstresu = 'mmHG' ;
+520        	if vsorres ne '' then output ;
+521        
+522        	** OUTPUT FOR OXYSAT **;
+523        	vsseq + 1 ;
+524        	vstestcd = 'OXYSAT' ;
+525        	vstest = 'Oxygen Saturation' ;
+526        	vsorres = put(o2sat,3.) ;
+527        	vsorresu = '%' ;
+5 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+528        	vsstresc = put(o2sat,3.) ;
+529        	vsstresn = o2sat ;
+530        	vsstresu = '%' ;
+531        	if vsorres ne '' then output ;
+532        
+533        	** OUTPUT FOR RESP **;
+534        	vsseq + 1 ;
+535        	vstestcd = 'RESP' ;
+536        	vstest = 'Respiratory Rate' ;
+537        	vsorres = put(resp,3.) ;
+538        	vsorresu = 'BREATHS/MIN' ;
+539        	vsstresc = put(resp,3.) ;
+540        	vsstresn = resp ;
+541        	vsstresu = 'BREATHS/MIN' ;
+542        	if vsorres ne '' then output ;
+543        
+544        	** OUTPUT FOR TEMP **;
+545        	vsseq + 1 ;
+546        	vstestcd = 'TEMP' ;
+547        	vstest = 'Temperature' ;
+548        	vsorres = put(temp,5.1) ;
+549        	vsorresu = 'F' ;
+550        	vsstresc = put(temp,5.1) ;
+551        	vsstresn = temp ;
+552        	vsstresu = 'F' ;
+553        	if vsorres ne '' then output ;
+554        
+555        	** OUTPUT FOR WEIGHT **;
+556        	vsseq + 1 ;
+557        	vstestcd = 'WEIGHT' ;
+558        	vstest = 'Weight' ;
+559        	vsorres = put(weight,6.2) ;
+560        	vsorresu = 'KG' ;
+561        	vsstresc = put(weight,6.2) ;
+562        	vsstresn = weight ;
+563        	vsstresu = 'KG' ;
+564        	if vsorres ne '' then output ;
+565        
+566        	** OUTPUT FOR HEIGHT **;
+567        	vsseq + 1 ;
+568        	vstestcd = 'HEIGHT' ;
+569        	vstest = 'Height' ;
+570        	vsorres = put(height,5.1) ;
+571        	vsorresu = 'IN' ;
+572        	vsstresc = put(height,5.1) ;
+573        	vsstresn = height ;
+574        	vsstresu = 'IN' ;
+575        	if vsorres ne '' then output ;
+576        
+577        run ;
+
+NOTE: There were 463 observations read from the data set WORK.VS.
+NOTE: The data set WORK.VS has 1913 observations and 15 variables.
+6 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+578        
+579        **-------------------------------------------------------------------------------**;
+580        **  CREATE BASELINE FLAG (VSBLFL)					                             **;
+581        **-------------------------------------------------------------------------------**;
+582        
+583        ** NOTE: BASELINE WAS TAKEN TO BE VITALS RECORDED AT 0 MINS OR THE LAST		**;
+584        ** 	     MEASUREMENT PRIOR TO 0 MINS.				 						**;
+585        
+586        proc sort data=vs
+587        		  out = vsfl ;
+588        	by usubjid vstestcd vsseq ;
+589        	where vstpt in ('SCREENING & BASELINE', '-5 min', '0 min') and vsorres ne '' ;
+590        run ;
+
+NOTE: There were 496 observations read from the data set WORK.VS.
+      WHERE vstpt in ('-5 min', '0 min', 'SCREENING & BASELINE') and (vsorres not = ' ');
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VSFL has 496 observations and 15 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+591        
+592        data vsfl ;
+593        	attrib
+594        		vsblfl  length = $1   label = 'Baseline Flag                   			'
+595        	    ;
+596        	set vsfl ;
+597        	by usubjid vstestcd vsseq ;
+598        	if last.vstestcd then vsblfl = 'Y' ;
+599        run ;
+
+NOTE: There were 496 observations read from the data set WORK.VSFL.
+NOTE: The data set WORK.VSFL has 496 observations and 16 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+600        
+601        proc sort data=vs ;
+602        	by usubjid vstestcd vsseq ;
+603        run ;
+
+NOTE: There were 1913 observations read from the data set WORK.VS.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VS has 1913 observations and 15 variables.
+7 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+604        
+605        data vs ;
+606        	merge vs
+607        		  vsfl (keep= usubjid vstestcd vsseq vsblfl) ;
+608        	by usubjid vstestcd vsseq ;
+609        run ;
+
+NOTE: There were 1913 observations read from the data set WORK.VS.
+NOTE: There were 496 observations read from the data set WORK.VSFL.
+NOTE: The data set WORK.VS has 1913 observations and 16 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+610        
+611        proc sort data=vs ;
+612        	by usubjid vsseq ;
+613        run ;
+
+NOTE: There were 1913 observations read from the data set WORK.VS.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.VS has 1913 observations and 16 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+614        
+615        **-------------------------------------------------------------------------------**;
+616        **  OUTPUT SDTM VS DATASET							                             **;
+617        **-------------------------------------------------------------------------------**;
+618        
+619        options replace ;
+620        
+621        proc sql ;
+622           create table sdtmlib.vs (label='Vital Signs') as
+623              select studyid, domain, &pat, visitnum, visit, vsdtc, vsseq, vstpt, vstestcd, vstest
+624        		   , vsorres, vsorresu, vsstresc, vsstresn, vsstresu, vsblfl
+625              from vs
+626              order by &pat, visitnum, vsseq ;
+NOTE: Table SDTMLIB.VS created, with 1913 rows and 16 columns.
+
+627        quit ;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           1.60 seconds
+      cpu time            0.00 seconds
+      
+8 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+
+628        
+629        options noreplace ;
+630        
+631        title "CHECK VITAL SIGNS SDTM DATASET" ;
+632        proc print data=sdtmlib.vs ;
+633        	where &printme ;
+634        run ;
+
+NOTE: There were 1913 observations read from the data set SDTMLIB.VS.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed pages 1-80.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.47 seconds
+      cpu time            0.04 seconds
+      
+
+635        title ;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           4.44 seconds
+      cpu time            0.32 seconds
+      

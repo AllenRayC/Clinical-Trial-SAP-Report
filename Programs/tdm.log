@@ -1,0 +1,607 @@
+1                                                          The SAS System                         11:32 Wednesday, November 23, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           0.90 seconds
+      cpu time            0.20 seconds
+      
+1          **-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    TDM.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE TABLE 2 - DEMOGRAPHIC AND BASELINE CHARACTERISTICS
+7          **
+8          ** PROGRAMMER: A.CHANG
+9          **
+10         ** INPUT:      ADSL DATA
+11         **
+12         ** OUTPUT:     TABLE 2
+13         **
+14         ** PROTOCOL:   PROD-124
+15         **
+16         ** MODIFIED:   DATE        BY          NOTE
+17         **             ----------  ----------
+17       ! -----------------------------------------------------
+18         **
+19         **-------------------------------------------------------------------------------------
+19       ! ------**;
+20         
+21         %include msetup ;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+2                                         The SAS System        11:32 Wednesday, November 23, 2016
+
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+402        
+403        **-------------------------------------------------------------------------------**;
+404        **  BRING IN ANALYSIS DATA                                                       **;
+405        **-------------------------------------------------------------------------------**;
+406        
+407        data adsl ;
+408           set adslib.adsl (where=(saffl eq 'Y')) ;
+409        run ;
+
+NOTE: There were 31 observations read from the data set ADSLIB.ADSL.
+      WHERE saffl='Y';
+NOTE: The data set WORK.ADSL has 31 observations and 26 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+410        
+411        **-----------------------------------------------------------------------------------**;
+412        **  EXPAND ADSL DATASET TO A NORMALIZED STRUCTURE (OUTPUT RECORDS FOR EACH CATEGORY) **;
+413        **-----------------------------------------------------------------------------------**;
+414        
+415        data adsl ;
+416        	set adsl ;
+417        	length parcat1 param $200 ;
+418        
+419        	parcat1n = 1 ;
+420        	parcat1 = 'Age (yrs)' ;
+421        	if age gt .z then aval = age ;
+422        	else aval = . ;
+423        	if aval gt .z then output ;
+424        
+425        	parcat1n = 2 ;
+426        	parcat1 = 'Sex n (%)' ;
+427        	paramn = sexgr1n ;
+428        	param = sexgr1 ;
+429        	aval = . ;
+430        	output ;
+431        
+432        	parcat1n = 3 ;
+433        	parcat1 = 'Race n (%)' ;
+434        	paramn = racegr1n ;
+435        	param = racegr1 ;
+436        	aval = . ;
+437        	output ;
+438        
+439        	parcat1n = 4 ;
+440        	parcat1 = 'Weight (kg)' ;
+3 The SAS System                                                                           11:32 Wednesday, November 23, 2016
+
+441        	if weight gt .z then aval = weight ;
+442        	else aval = . ;
+443        	if aval gt .z then output ;
+444        
+445        	parcat1n = 5 ;
+446        	parcat1 = 'Height (cm)' ;
+447        	if height gt .z then aval = height ;
+448        	else aval = . ;
+449        	if aval gt .z then output ;
+450        
+451        run ;
+
+NOTE: There were 31 observations read from the data set WORK.ADSL.
+NOTE: The data set WORK.ADSL has 155 observations and 31 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+452        
+453        **-- OUTPUT FOR TOTALS COLUMN --**;
+454        data adsl ;
+455        	set adsl ;
+456        	output ;        			** OUTPUT ONCE FOR EACH SUBJECT **;
+457        	trt01pn = 3 ;   			** RE-ASSIGN FOR SAFETY POPULATION, THEN OUTPUT AGAIN **;
+458        	trt01p = 'All Subjects' ;
+459        	output ;
+460        	if fasfl = 'Y' then
+461           		do ;
+462        			trt01pn = 4 ;		** RE-ASSIGN FOR EVALUABLE POPULATION, THEN OUTPUT AGAIN **;
+463        			trt01p = 'All' ;
+464        			output ;
+465        		end ;
+466        run ;
+
+NOTE: There were 155 observations read from the data set WORK.ADSL.
+NOTE: The data set WORK.ADSL has 465 observations and 31 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+467        
+468        **-- POPULATION COUNTS --**;
+469        proc sort data=adsl out=popcnt nodupkey ;
+470           by trt01pn subjid ;
+471        run ;
+
+NOTE: There were 465 observations read from the data set WORK.ADSL.
+NOTE: SAS sort was used.
+NOTE: 372 observations with duplicate key values were deleted.
+NOTE: The data set WORK.POPCNT has 93 observations and 31 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+4 The SAS System                                                                           11:32 Wednesday, November 23, 2016
+
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+472        
+473        proc freq data=popcnt noprint ;
+474           tables trt01pn*trt01p /out=popcnt (drop=percent) ;
+475        run ;
+
+NOTE: There were 93 observations read from the data set WORK.POPCNT.
+NOTE: The data set WORK.POPCNT has 4 observations and 3 variables.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.01 seconds
+      
+
+476        
+477        **-- ASSIGN POPULATION COUNT INTO MACRO VARIABLES --**;
+478        data _null_ ;
+479           set popcnt ;
+480           call symput('popcnt'||compress(put(trt01pn,8.)),compress(put(count,8.))) ;
+481           call symput('trt'||compress(put(trt01pn,8.)),trim(left(trt01p))) ;
+482        run ;
+
+NOTE: There were 4 observations read from the data set WORK.POPCNT.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+483        
+484        title "CHECK DENOMINATORS" ;
+485        proc print data=popcnt ;
+486           where &printme ;
+                    _
+                    180
+WARNING: Apparent symbolic reference PRINTME not resolved.
+ERROR: Syntax error while parsing WHERE clause.
+ERROR 180-322: Statement is not valid or it is used out of proper order.
+487        run ;
+
+NOTE: The SAS System stopped processing this step because of errors.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.01 seconds
+      
+488        title ;
+489        
+490        **-------------------------------------------------------------------------------**;
+491        **  FREQUENCY COUNTS                                                             **;
+492        **-------------------------------------------------------------------------------**;
+493        
+
+5 The SAS System                                                                           11:32 Wednesday, November 23, 2016
+
+
+494        proc freq data=adsl (where=(aval=.)) noprint ;
+495           tables trt01pn*parcat1n*parcat1*paramn*param /out=freqs (drop=percent) ;
+496        run ;
+
+NOTE: There were 186 observations read from the data set WORK.ADSL.
+      WHERE aval=.;
+NOTE: The data set WORK.FREQS has 19 observations and 6 variables.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+497        
+498        **-- BRING IN DENOMINATORS --**;
+499        data freqs ;
+500           merge freqs popcnt (rename=(count=popcnt)) ;
+501           by trt01pn ;
+502           length col $200 ;
+503           if n(count,popcnt) eq 2 then col = compress(put(count,8.))||' ('||compress(put(count/popcnt*100,8.1))||')' ;
+504        run ;
+
+NOTE: There were 19 observations read from the data set WORK.FREQS.
+NOTE: There were 4 observations read from the data set WORK.POPCNT.
+NOTE: The data set WORK.FREQS has 19 observations and 9 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+505        
+506        title "CHECK FREQUENCY DATA" ;
+507        proc print data=freqs ;
+508        	where &printme ;
+                  _
+                  180
+WARNING: Apparent symbolic reference PRINTME not resolved.
+ERROR: Syntax error while parsing WHERE clause.
+ERROR 180-322: Statement is not valid or it is used out of proper order.
+509        run ;
+
+NOTE: The SAS System stopped processing this step because of errors.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+510        title ;
+511        
+512        **-- CREATE TABLE SHELL --**;
+
+
+513        data shell (drop = i j) ;
+514        	length parcat1 param col $200 trt01p $20 ;
+6 The SAS System                                                                           11:32 Wednesday, November 23, 2016
+
+515        	count = 0 ;
+516        	col = '0' ;
+517        	do i = 1 to 4 by 1 ;
+518        		trt01pn = i ;
+519        			 if trt01pn = 1 then trt01p = 'Cohort 1' ;
+520        		else if trt01pn = 2 then trt01p = 'Cohort 2' ;
+521        		else if trt01pn = 3 then trt01p = 'All Subjects' ;
+522        		else if trt01pn = 4 then trt01p = 'All' ;
+523        		
+524        		parcat1n = 2 ;
+525        		parcat1 = 'Sex n (%)' ;
+526        		do j=1 to 2 by 1 ;
+527        			paramn = j ;
+528        				 if paramn = 1 then param = 'Male' ;
+529        			else if paramn = 2 then param = 'Female' ;
+530        			output ;
+531        		end ;
+532        
+533        		parcat1n = 3 ;
+534        		parcat1 = 'Race n (%)' ;
+535        		do j=1 to 5 by 1 ;
+536        			paramn = j ;
+537        				 if paramn = 1 then param = 'Caucasian' ;
+538        			else if paramn = 2 then param = 'Black' ;
+539        			else if paramn = 3 then param = 'Hispanic' ;
+540        			else if paramn = 4 then param = 'Asian' ;
+541        			else if paramn = 5 then param = 'Other' ;
+542        			output ;
+543        		end ;
+544        	end ;
+545        run ;
+
+NOTE: The data set WORK.SHELL has 28 observations and 8 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+546        
+547        proc sort data=shell ;
+548        	by trt01pn parcat1n parcat1 paramn param ;
+549        run ;
+
+NOTE: There were 28 observations read from the data set WORK.SHELL.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.SHELL has 28 observations and 8 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+550        
+551        **-- MERGE FREQUENCY DATA WITH TABLE SHELL --**;
+7 The SAS System                                                                           11:32 Wednesday, November 23, 2016
+
+552        data freqs ;
+553        	set freqs
+554        		shell ;
+555        	by trt01pn parcat1n parcat1 paramn param ;
+556        	if first.paramn ;
+557        run ;
+
+NOTE: There were 19 observations read from the data set WORK.FREQS.
+NOTE: There were 28 observations read from the data set WORK.SHELL.
+NOTE: The data set WORK.FREQS has 28 observations and 9 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+558        
+559        **-------------------------------------------------------------------------------**;
+560        **  SUMMARY STATS                                                                **;
+561        **-------------------------------------------------------------------------------**;
+562        
+563        proc sort data=adsl (where=(aval ne .))
+564        		  out=summary ;
+565           by trt01pn trt01p parcat1n parcat1;
+566        run ;
+
+NOTE: There were 279 observations read from the data set WORK.ADSL.
+      WHERE aval not = .;
+NOTE: SAS sort was used.
+NOTE: The data set WORK.SUMMARY has 279 observations and 31 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+567        
+568        proc means data=summary noprint ;
+569           by trt01pn trt01p parcat1n parcat1 ;
+570           var aval ;
+571           output out=summary n=n mean=mean std=std median=median min=min max=max ;
+572        run ;
+
+NOTE: There were 279 observations read from the data set WORK.SUMMARY.
+NOTE: The data set WORK.SUMMARY has 12 observations and 12 variables.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+573        
+574        **-- FORMAT SUMMARY STATS TO CHARACTER VARIABLES --**;
+575        data summary (keep= trt01pn trt01p parcat1n parcat1 paramn param col) ;
+576        	set summary ;
+577        	length param col $200 ;
+8 The SAS System                                                                           11:32 Wednesday, November 23, 2016
+
+578        
+579        	paramn = 1 ;
+580        	param = 'n' ;
+581        	col = compress(put(n,8.)) ;
+582        	output ;
+583        
+584        	paramn = 2 ;
+585        	param = 'Mean' ;
+586        	col = compress(put(mean,8.1)) ;
+587        	output ;
+588        
+589        	paramn = 3 ;
+590        	param = 'SD' ;
+591        	col = compress(put(std,8.1)) ;
+592        	output ;
+593        
+594        	paramn = 4 ;
+595        	param = 'Median' ;
+596        	col = compress(put(median,8.1)) ;
+597        	output ;
+598        
+599        	paramn = 5 ;
+600        	param = 'Range (Min, Max)' ;
+601        	col = '(' || compress(put(min,8.)) || ', ' || compress(put(max,8.)) || ')' ;
+602        	output ;
+603        
+604        run ;
+
+NOTE: There were 12 observations read from the data set WORK.SUMMARY.
+NOTE: The data set WORK.SUMMARY has 60 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+605        
+606        title "CHECK SUMMARY STATS" ;
+607        proc print data=summary ;
+608           where &printme ;
+                    _
+                    180
+WARNING: Apparent symbolic reference PRINTME not resolved.
+ERROR: Syntax error while parsing WHERE clause.
+ERROR 180-322: Statement is not valid or it is used out of proper order.
+609        run ;
+
+NOTE: The SAS System stopped processing this step because of errors.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+610        title ;
+611        
+9 The SAS System                                                                           11:32 Wednesday, November 23, 2016
+
+612        **-------------------------------------------------------------------------------**;
+613        **  COMBINE SUMMARY STATS AND FREQUENCY COUNTS                                   **;
+614        **-------------------------------------------------------------------------------**;
+615        
+
+
+616        data stats ;
+617           set freqs summary ;
+618        run ;
+
+NOTE: There were 28 observations read from the data set WORK.FREQS.
+NOTE: There were 60 observations read from the data set WORK.SUMMARY.
+NOTE: The data set WORK.STATS has 88 observations and 9 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+619        
+620        title "CHECK DATA PRIOR TO TRANSPOSE" ;
+621        proc print data=stats ;
+622        	var parcat1n parcat1 paramn param trt01pn col ;
+623        	where &printme ;
+                  _
+                  180
+WARNING: Apparent symbolic reference PRINTME not resolved.
+ERROR: Syntax error while parsing WHERE clause.
+ERROR 180-322: Statement is not valid or it is used out of proper order.
+624        run ;
+
+NOTE: The SAS System stopped processing this step because of errors.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+625        title ;
+626        
+627        **----- TRANSPOSE DATA -----**;
+
+
+628        proc sort data=stats out=stats ;
+629           by parcat1n paramn ;
+630        run ;
+
+NOTE: There were 88 observations read from the data set WORK.STATS.
+NOTE: SAS sort was used.
+NOTE: The data set WORK.STATS has 88 observations and 9 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+631        
+10 The SAS System                                                                          11:32 Wednesday, November 23, 2016
+
+632        proc transpose data=stats out=stats (drop=_name_) ;
+633           by parcat1n parcat1 paramn param ;
+634           id trt01pn ;
+635           var col ;
+636        run ;
+
+NOTE: There were 88 observations read from the data set WORK.STATS.
+NOTE: The data set WORK.STATS has 22 observations and 8 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+637        
+638        **-------------------------------------------------------------------------------**;
+639        **  FORMAT DATA FOR REPORT                                                       **;
+640        **-------------------------------------------------------------------------------**;
+641        
+642        data stats ;
+643        	set stats (rename= (_1=col3 _2=col4 _3=col1 _4=col2)) ;
+644        		 if parcat1n in (1:4) then pagevar = 1 ;
+645        	else if parcat1n = 5 then pagevar = 2 ;
+646        run ;
+
+NOTE: There were 22 observations read from the data set WORK.STATS.
+NOTE: The data set WORK.STATS has 22 observations and 9 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+647        
+648        **-------------------------------------------------------------------------------**;
+649        **  CREATE REPORT                                                                **;
+650        **-------------------------------------------------------------------------------**;
+651        
+652        **----- RTF SETUP -----**;
+653        options nodate nonumber orientation=landscape missing=' ';
+654        ods listing close ;
+655        ods escapechar='^' ;
+The SAS System
+
+656        ods rtf style=TStyleRTF file="&opath.\T2.rtf" ;
+NOTE: Writing RTF Body file: E:\PROD124\Output\T2.rtf
+657        
+658        **----- TITLES/FOOTNOTES -----**;
+659        title1 j=left "CM Pharmaceuticals, Inc." j=right 'Page ^{pageof}' ;
+660        title2 j=left "Protocol PROD-124" j=right "&sysdate9"  ;
+661        title3 j=center "Table 2" ;
+662        *title4 ;
+663        title5 j=center "Demographic and Baseline Characteristics" ;
+664        title7 j=left "Study Population: Safety" ;
+665        
+666        footnote1 "^{style [outputwidth=100% bordertopcolor=black bordertopwidth=1pt]}" ;
+667        footnote2 j=left "Data Source: ADSL" j=right "Program: tdm.sas" ;
+668        
+669        **----- REPORT DEFINITION -----**;
+670        proc report data=stats missing nowindows center split='|' style(report)=[outputwidth=9.0in] ;
+671           column pagevar parcat1n parcat1 paramn param col1 ('^S={borderbottomcolor=black borderbottomwidth=2} Evaluable
+671      ! Population' col2-col4) ;
+672        
+673           define pagevar /order noprint ;
+674           define parcat1n /order noprint ;
+675           define parcat1 /order noprint ;
+676           define paramn /order noprint ;
+677        
+678           define param /"^R'\ql Characteristic'" style(column)=[leftmargin=0.15in just=left cellwidth=2.00in] ;
+679           define col1 /"&trt3|(N=&popcnt3)" style(column)=[just=center cellwidth=1.5in] ;
+680           define col2 /"&trt4|(N=&popcnt4)" style(column)=[just=center cellwidth=1.5in] ;
+681           define col3 /"&trt1|(N=&popcnt1)" style(column)=[just=center cellwidth=1.5in] ;
+682           define col4 /"&trt2|(N=&popcnt2)" style(column)=[just=center cellwidth=1.5in] ;
+683        
+684           break after pagevar / page ;
+685        
+686           compute before parcat1 ;
+687              length text $400 ;
+688              text = trim(left(parcat1)) ;
+689              line @2 text $400. ;
+690           endcomp ;
+691        
+692           compute before parcat1n ;
+693              line ' ' ;
+The SAS System
+
+694           endcomp ;
+695        run ;
+
+NOTE: Multiple concurrent threads will be used to summarize data.
+NOTE: PROCEDURE REPORT used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+NOTE: There were 22 observations read from the data set WORK.STATS.
+
+696        
+697        **----- CLOSE RTF AND RESET TITLES/FOOTNOTES -----**;
+698        ods rtf close ;
+699        ods listing ;
+700        
+701        options date number ;
+702        title ;
+703        footnote ;
+
+ERROR: Errors printed on pages 4,5,8,9.
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           1.85 seconds
+      cpu time            0.46 seconds
+      

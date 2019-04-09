@@ -1,0 +1,147 @@
+1                                                          The SAS System                            15:04 Monday, November 21, 2016
+
+NOTE: Unable to open SASUSER.REGSTRY. WORK.REGSTRY will be opened instead.
+NOTE: All registry changes will be lost at the end of the session.
+
+WARNING: Unable to copy SASUSER registry to WORK registry. Because of this, you will not see registry customizations during this 
+         session.
+NOTE: Unable to open SASUSER.PROFILE. WORK.PROFILE will be opened instead.
+NOTE: All profile changes will be lost at the end of the session.
+NOTE: Copyright (c) 2002-2010 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.3 (TS1M2) 
+      Licensed to PHILADELPHIA UNIVERSITY - T&R, Site 70206583.
+NOTE: This session is executing on the X64_8PRO  platform.
+
+
+
+NOTE: Enhanced analytical products:
+
+SAS/STAT 12.1, SAS/ETS 12.1, SAS/OR 12.2, SAS/IML 12.1, SAS/QC 12.1
+
+NOTE: SAS initialization used:
+      real time           1.51 seconds
+      cpu time            0.23 seconds
+      
+1          /*-------------------------------------------------------------------------------------
+1        ! ------**
+2          ** PROGRAM:    D0SUPPDM.SAS
+3          **
+4          ** CREATED:    NOVEMBER 2016
+5          **
+6          ** PURPOSE:    CREATE SDTM SUPPDM DATASET
+7          **
+8          ** PROGRAMMER: A.CHANG
+9          **
+10         ** INPUT:      RAWLIB.DEMO
+11         **
+12         ** OUTPUT:     SDTMLIB.SUPPDM
+13         **
+14         ** PROTOCOL:   PROD-124
+15         **
+16         ** MODIFIED:   DATE        BY         NOTE
+17         **             ---------- ---------- -----------------------------------------
+18         **
+19         **-------------------------------------------------------------------------------------
+19       ! ------**
+20         ** PROGRAMMED USING SAS VERSION 9.3
+20       !       **
+21         **-------------------------------------------------------------------------------------
+21       ! ------**/
+22         
+23         %include msetup ;
+NOTE: Libref RAWLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Original
+NOTE: Libref ADSLIB was successfully assigned as follows: 
+2                                         The SAS System           15:04 Monday, November 21, 2016
+
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\Analysis
+NOTE: Libref SDTMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Data\SDTM
+NOTE: Libref PGMLIB was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: E:\PROD124\Programs
+404        %let printme = 1 ;
+405        
+406        **-------------------------------------------------------------------------------**;
+407        **  BRING IN ORIGINAL DEMOGRAPHICS DATA                                          **;
+408        **-------------------------------------------------------------------------------**;
+409        
+410        data suppdm (keep= studyid rdomain &pat qnam qlabel qval qorig) ;
+411        	attrib
+412        	    studyid  length = $8   label = 'Study Identifier                   '
+413        		rdomain	 length = $2   label = 'Related Domain Abbreviation		   '
+414        	    &pat  	 length = $16  label = 'Unique Subject Identifier          '
+415        		qnam	 length = $8   label = 'Qualifier Variable Name 		   '
+416        		qlabel	 length = $40  label = 'Qualifier Variable Label		   '
+417        		qval	 length = $200 label = 'Data Value						   '
+418        		qorig	 length = $10  label = 'Origin							   '
+419        	    ;
+420        	set rawlib.demo ;
+421        
+422        	**-- ASSIGN REQUIRED SDTM VARIABLES --**;
+423        	studyid = compress(proto) ;
+424        	rdomain = 'DM' ;
+425        	&pat = studyid || '-' || '0' || put(inv_no,2.) || '-' || put(patid,3.) ;
+426        	
+427        	**-- RACEOTH --**;
+428        	qnam = 'RACEOTH' ;
+429        	qlabel = 'Race, Other' ;
+430        	if race = 'OTHER' then qval = raceoth ;
+431        	qorig = pageno ;
+432        run ;
+
+NOTE: There were 34 observations read from the data set RAWLIB.DEMO.
+NOTE: The data set WORK.SUPPDM has 34 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+433        
+434        **-------------------------------------------------------------------------------**;
+435        **  OUTPUT SDTM DM DATASET							                             **;
+436        **-------------------------------------------------------------------------------**;
+437        
+438        options replace ;
+439        
+440        proc sql ;
+3 The SAS System                                                                              15:04 Monday, November 21, 2016
+
+441           create table sdtmlib.suppdm (label='Supplemental Qualifiers DM') as
+442              select studyid, rdomain, &pat, qnam, qlabel, qval, qorig
+443              from suppdm
+444              order by &pat ;
+NOTE: Table SDTMLIB.SUPPDM created, with 34 rows and 7 columns.
+
+445        quit ;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.22 seconds
+      cpu time            0.00 seconds
+      
+
+446        
+447        options noreplace ;
+448        
+449        title "CHECK SUPPLEMENTAL QUALIFIERS DM DATASET" ;
+450        proc print data=sdtmlib.suppdm ;
+451        	where &printme ;
+452        run ;
+
+NOTE: There were 34 observations read from the data set SDTMLIB.SUPPDM.
+      WHERE 1 /* an obviously TRUE WHERE clause */ ;
+NOTE: The PROCEDURE PRINT printed page 1.
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.01 seconds
+      
+
+453        title ;
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           2.15 seconds
+      cpu time            0.26 seconds
+      
